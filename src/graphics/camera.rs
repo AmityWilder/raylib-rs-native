@@ -1,4 +1,4 @@
-use crate::math::{matrix::Matrix, vector::{Angle, Normalize, Vector3}, Distance, Radians};
+use crate::math::{matrix::Matrix, units::{Radians, Ratio, Second, Seconds}, vector::{Angle, Normalize, Vector3}, Distance};
 
 pub struct Camera3D {
     pub position: Vector3,
@@ -117,10 +117,10 @@ impl Camera {
             // to allow only viewing straight up or down.
 
             // Clamp view up
-            let max_angle_up = up.angle(target_position) - 0.001;
+            let max_angle_up = up.angle(target_position) - Radians(0.001);
 
             // Clamp view down
-            let max_angle_down = -(-up).angle(target_position) + 0.001;
+            let max_angle_down = -(-up).angle(target_position) + Radians(0.001);
 
             angle = angle.clamp(max_angle_down, max_angle_up)
         }
@@ -164,6 +164,5 @@ impl Camera {
     pub const ROTATION_SPEED:         f32     = 0.03;
     pub const PAN_SPEED:              f32     = 0.2;
     pub const MOUSE_MOVE_SENSITIVITY: f32     = 0.003;
-    /// Radians per second
-    pub const ORBITAL_SPEED:          Radians = 0.5;
+    pub const ORBITAL_SPEED: Ratio<Radians, Seconds> = Radians(0.5).per(Second);
 }

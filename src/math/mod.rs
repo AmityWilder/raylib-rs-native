@@ -1,12 +1,19 @@
 pub mod vector;
 pub mod quaternion;
 pub mod matrix;
+pub mod units;
 
-/// Communicates that the parameter is expected in radians
-pub type Radians = f32;
+pub trait Wrap {
+    #[must_use]
+    fn wrap(self, min: Self, max: Self) -> Self;
+}
 
-/// Communicates that the parameter is expected in degrees
-pub type Degrees = f32;
+impl Wrap for f32 {
+    #[inline]
+    fn wrap(self, min: Self, max: Self) -> Self {
+        self - (max - min) * self.normalize_between(min, max).floor()
+    }
+}
 
 pub trait Magnitude {
     #[must_use]

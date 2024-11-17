@@ -1,5 +1,5 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use super::{matrix::Matrix, Distance, LerpTo, Magnitude, NearEq, Radians};
+use super::{matrix::Matrix, Distance, LerpTo, Magnitude, NearEq, units::Radians};
 
 pub trait DotProduct {
     #[must_use]

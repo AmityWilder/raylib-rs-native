@@ -1,5 +1,5 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use super::{matrix::Matrix, vector::{Angle, DotProduct, MatrixTransform, Normalize, Vector, Vector3, Vector4}, LerpTo, Magnitude, NearEq, Radians};
+use super::{matrix::Matrix, vector::{Angle, DotProduct, MatrixTransform, Normalize, Vector, Vector3, Vector4}, LerpTo, Magnitude, NearEq, units::Radians};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[must_use]
@@ -398,7 +398,7 @@ impl Quaternion {
             self = self.normalize();
         }
 
-        let res_angle = 2.0 * self.w.acos();
+        let res_angle = Radians(self.w.acos()) * 2.0;
         let den = (1.0 - self.w * self.w).sqrt();
 
         let res_axis = if den > f32::EPSILON {
@@ -433,16 +433,16 @@ impl Quaternion {
         // Roll (x-axis rotation)
         let x0 =       2.0 * (self.w * self.x + self.y * self.z);
         let x1 = 1.0 - 2.0 * (self.x * self.x + self.y * self.y);
-        let roll = x0.atan2(x1);
+        let roll = Radians(x0.atan2(x1));
 
         // Pitch (y-axis rotation)
         let y0 = 2.0 * (self.w * self.y - self.z * self.x).clamp(-1.0, 1.0);
-        let pitch = y0.asin();
+        let pitch = Radians(y0.asin());
 
         // Yaw (z-axis rotation)
         let z0 =       2.0 * (self.w * self.z + self.x * self.y);
         let z1 = 1.0 - 2.0 * (self.y * self.y + self.z * self.z);
-        let yaw = z0.atan2(z1);
+        let yaw = Radians(z0.atan2(z1));
 
         (roll, pitch, yaw)
     }
