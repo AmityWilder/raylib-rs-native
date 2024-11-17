@@ -329,8 +329,8 @@ impl MatrixTransform for Vector2 {
     #[inline]
     fn transform(self, mat: Matrix) -> Self {
         Self {
-            x: mat[0][0] * self.x + mat[0][1] * self.y + mat[0][2] * 0.0 + mat[0][3],
-            y: mat[1][0] * self.x + mat[1][1] * self.y + mat[1][2] * 0.0 + mat[1][3],
+            x: mat.0[0][0] * self.x + mat.0[0][1] * self.y + mat.0[0][2] * 0.0 + mat.0[0][3],
+            y: mat.0[1][0] * self.x + mat.0[1][1] * self.y + mat.0[1][2] * 0.0 + mat.0[1][3],
         }
     }
 }
@@ -632,9 +632,9 @@ impl MatrixTransform for Vector3 {
     #[inline]
     fn transform(self, mat: Matrix) -> Self {
         Self {
-            x: mat[0][0] * self.x + mat[0][1] * self.y + mat[0][2] * self.z + mat[0][3],
-            y: mat[1][0] * self.x + mat[1][1] * self.y + mat[1][2] * self.z + mat[1][3],
-            z: mat[2][0] * self.x + mat[2][1] * self.y + mat[2][2] * self.z + mat[2][3],
+            x: mat.0[0][0] * self.x + mat.0[0][1] * self.y + mat.0[0][2] * self.z + mat.0[0][3],
+            y: mat.0[1][0] * self.x + mat.0[1][1] * self.y + mat.0[1][2] * self.z + mat.0[1][3],
+            z: mat.0[2][0] * self.x + mat.0[2][1] * self.y + mat.0[2][2] * self.z + mat.0[2][3],
         }
     }
 }
@@ -945,10 +945,10 @@ impl MatrixTransform for Vector4 {
     #[inline]
     fn transform(self, mat: Matrix) -> Self {
         Self {
-            x: mat[0][0] * self.x + mat[0][1] * self.y + mat[0][2] * self.z + mat[0][3] * self.w,
-            y: mat[1][0] * self.x + mat[1][1] * self.y + mat[1][2] * self.z + mat[1][3] * self.w,
-            z: mat[2][0] * self.x + mat[2][1] * self.y + mat[2][2] * self.z + mat[2][3] * self.w,
-            w: mat[3][0] * self.x + mat[3][1] * self.y + mat[3][2] * self.z + mat[3][3] * self.w,
+            x: mat.0[0][0] * self.x + mat.0[0][1] * self.y + mat.0[0][2] * self.z + mat.0[0][3] * self.w,
+            y: mat.0[1][0] * self.x + mat.0[1][1] * self.y + mat.0[1][2] * self.z + mat.0[1][3] * self.w,
+            z: mat.0[2][0] * self.x + mat.0[2][1] * self.y + mat.0[2][2] * self.z + mat.0[2][3] * self.w,
+            w: mat.0[3][0] * self.x + mat.0[3][1] * self.y + mat.0[3][2] * self.z + mat.0[3][3] * self.w,
         }
     }
 }
