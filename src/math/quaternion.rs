@@ -1,5 +1,5 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use super::{matrix::Matrix, vector::{DotProduct, MatrixTransform, Normalize, Vector, Vector3, Vector4}, LerpTo, Magnitude, NearEq, Radians};
+use super::{matrix::Matrix, vector::{Angle, DotProduct, MatrixTransform, Normalize, Vector, Vector3, Vector4}, LerpTo, Magnitude, NearEq, Radians};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[must_use]
@@ -55,6 +55,12 @@ impl Quaternion {
             z: self.z * -inv_magnitude,
             w: self.w *  inv_magnitude,
         }
+    }
+}
+
+impl Angle for Quaternion {
+    fn angle(self, other: Self) -> Radians {
+        todo!()
     }
 }
 

@@ -1,5 +1,5 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use super::{matrix::Matrix, Distance, LerpTo, Magnitude, NearEq};
+use super::{matrix::Matrix, Distance, LerpTo, Magnitude, NearEq, Radians};
 
 pub trait DotProduct {
     #[must_use]
@@ -17,6 +17,11 @@ pub trait Normalize {
     fn normalize(self) -> Self;
 }
 
+pub trait Angle {
+    #[must_use]
+    fn angle(self, other: Self) -> Radians;
+}
+
 // Helper for providing vector-wide implementations
 pub trait Vector:
     Sized + Copy +
@@ -25,7 +30,7 @@ pub trait Vector:
     Sub<Output = Self> + SubAssign + Sub<f32, Output = Self> + SubAssign<f32> +
     Mul<Output = Self> + MulAssign + Mul<f32, Output = Self> + MulAssign<f32> +
     Div<Output = Self> + DivAssign + Div<f32, Output = Self> + DivAssign<f32> +
-    DotProduct + MatrixTransform
+    DotProduct + MatrixTransform + Angle
 {}
 
 impl<T: Vector> Normalize for T {
@@ -81,6 +86,12 @@ impl Vector2 {
     #[inline]
     pub const fn new(x: f32, y: f32) -> Self {
         Self { x, y }
+    }
+}
+
+impl Angle for Vector2 {
+    fn angle(self, other: Self) -> Radians {
+        todo!()
     }
 }
 
@@ -368,6 +379,42 @@ impl Vector3 {
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x,
         }
+    }
+
+    pub fn rotate_by_axis_angle(self, axis: Self, angle: Radians) -> Self {
+        // Using Euler-Rodrigues Formula
+        // Ref.: https://en.wikipedia.org/w/index.php?title=Euler%E2%80%93Rodrigues_formula
+
+        let (sin, cos) = (angle / 2.0).sin_cos();
+        let w = axis.normalize() * sin;
+        let wv = w.cross_product(self);
+        let wwv = w.cross_product(wv);
+        self + (wv * 2.0 * cos) + (wwv * 2.0)
+    }
+
+    pub fn move_towards(self, target: Self, max_distance: f32) -> Self {
+        let delta = target - self;
+        let dist_sqr = target.distance_sqr(self);
+
+        if dist_sqr == 0.0 || (max_distance >= 0.0 && dist_sqr <= max_distance*max_distance) {
+            target
+        } else {
+            let dist = dist_sqr.sqrt();
+
+            self + max_distance * delta / dist
+        }
+    }
+}
+
+impl From<Vector3> for [f32; 3] {
+    fn from(Vector3 { x, y, z }: Vector3) -> Self {
+        [x, y, z]
+    }
+}
+
+impl Angle for Vector3 {
+    fn angle(self, other: Self) -> Radians {
+        todo!()
     }
 }
 
@@ -665,6 +712,12 @@ impl Vector4 {
     #[inline]
     pub const fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
         Self { x, y, z, w }
+    }
+}
+
+impl Angle for Vector4 {
+    fn angle(self, other: Self) -> Radians {
+        todo!()
     }
 }
 
