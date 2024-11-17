@@ -1,4 +1,4 @@
-use crate::math::{matrix::Matrix, units::{Degrees, Radians, Ratio, Second, Seconds}, vector::{Angle, Normalize, Vector3}, Distance};
+use crate::{math::{matrix::Matrix, units::{Degrees, Radians, Ratio, Second, Seconds}, vector::{Angle, Normalize, Vector3}, Distance}, ratio};
 
 pub struct Camera3D {
     pub position: Vector3,
@@ -163,12 +163,12 @@ impl Camera {
     pub const CULL_DISTANCE_NEAR: f32 =    0.01;
     pub const CULL_DISTANCE_FAR:  f32 = 1000.0 ;
 
-    pub const MOVE_SPEED: Ratio<f32, Seconds> = Ratio::of(5.4, Second);
-    pub const PAN_SPEED:  Ratio<f32, Seconds> = Ratio::of(0.2, Second);
+    pub const MOVE_SPEED: f32 = 5.4;
+    pub const PAN_SPEED:  f32 = 0.2;
 
     /// Camera orbital speed in CAMERA_ORBITAL mode
-    pub const ORBITAL_SPEED:  Ratio<Radians, Seconds> = Radians(0.5 ).per(Second);
-    pub const ROTATION_SPEED: Ratio<Radians, Seconds> = Radians(0.03).per(Second);
+    pub const ORBITAL_SPEED:  Ratio<Radians, Seconds> = ratio!(0.5  Radians / Second);
+    pub const ROTATION_SPEED: Ratio<Radians, Seconds> = ratio!(0.03 Radians / Second);
 
     pub const MOUSE_MOVE_SENSITIVITY: f32 = 0.003;
 }

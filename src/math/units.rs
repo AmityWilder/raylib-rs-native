@@ -26,6 +26,25 @@ pub trait Singular: Copy + Eq + Ord {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Ratio<T: Unit, U: Unit>(pub T, pub U::One);
 
+#[macro_export]
+macro_rules! ratio {
+    ($delta:literal units / $step:ident) => {
+        Ratio($delta, $step)
+    };
+
+    ($delta:literal units / $step:ident^2) => {
+        Ratio(Ratio($delta, $step), $step)
+    };
+
+    ($delta:literal $unit:ident / $step:ident) => {
+        Ratio($unit($delta), $step)
+    };
+
+    ($delta:literal $unit:ident / $step:ident^2) => {
+        Ratio(Ratio($unit($delta), $step), $step)
+    };
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OneToOne<T: Singular, U: Singular>(pub T, pub U);
 
@@ -91,17 +110,6 @@ impl<T: Unit, U: Unit> Ratio<T, U> {
     pub const fn of(delta: T, step: U::One) -> Self {
         Self(delta, step)
     }
-}
-
-#[macro_export]
-macro_rules! ratio {
-    ($delta:literal $unit:ident / $step:ident) => {
-        Ratio::of($unit($delta), $step)
-    };
-
-    ($delta:literal $unit:ident / $step:ident^2) => {
-        Ratio::of(Ratio::of($unit($delta), $step), $step)
-    };
 }
 
 pub trait Angular: Unit {
@@ -327,20 +335,3 @@ define_unit!(
     /// One second
     Second
 );
-
-// By default, f32 indicates distance units.
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct OneUnit;
-
-impl Singular for OneUnit {
-    type Plural = f32;
-}
-
-impl Unit for f32 {
-    type One = OneUnit;
-
-    fn clamp(self, min: Self, max: Self) -> Self {
-        self.clamp(min, max)
-    }
-}
