@@ -1,4 +1,4 @@
-use crate::math::{matrix::Matrix, units::{Radians, Ratio, Second, Seconds}, vector::{Angle, Normalize, Vector3}, Distance};
+use crate::math::{matrix::Matrix, units::{Degrees, Radians, Ratio, Second, Seconds}, vector::{Angle, Normalize, Vector3}, Distance};
 
 pub struct Camera3D {
     pub position: Vector3,
@@ -7,7 +7,7 @@ pub struct Camera3D {
     /// Camera up vector (rotation over its axis)
     pub up: Vector3,
     /// Camera field-of-view aperture in Y (degrees) in perspective, used as near plane width in orthographic
-    pub fovy: f32,
+    pub fovy: Degrees,
     pub projection: CameraProjection,
 }
 
@@ -160,9 +160,15 @@ impl Camera {
         todo!()
     }
 
-    pub const MOVE_SPEED:             f32     = 5.4;
-    pub const ROTATION_SPEED:         f32     = 0.03;
-    pub const PAN_SPEED:              f32     = 0.2;
-    pub const MOUSE_MOVE_SENSITIVITY: f32     = 0.003;
-    pub const ORBITAL_SPEED: Ratio<Radians, Seconds> = Radians(0.5).per(Second);
+    pub const CULL_DISTANCE_NEAR: f32 =    0.01;
+    pub const CULL_DISTANCE_FAR:  f32 = 1000.0 ;
+
+    pub const MOVE_SPEED: Ratio<f32, Seconds> = Ratio::of(5.4, Second);
+    pub const PAN_SPEED:  Ratio<f32, Seconds> = Ratio::of(0.2, Second);
+
+    /// Camera orbital speed in CAMERA_ORBITAL mode
+    pub const ORBITAL_SPEED:  Ratio<Radians, Seconds> = Radians(0.5 ).per(Second);
+    pub const ROTATION_SPEED: Ratio<Radians, Seconds> = Radians(0.03).per(Second);
+
+    pub const MOUSE_MOVE_SENSITIVITY: f32 = 0.003;
 }

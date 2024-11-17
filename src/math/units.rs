@@ -1,12 +1,12 @@
 //! Helpers for communicating the expected usage of float parameters
 
-use std::ops::{Neg, Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use std::{cmp::Ordering, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign}};
 use super::Wrap;
 
 pub trait Unit
 where
     Self:
-        Sized + Clone + Copy +
+        Sized + Copy +
         Wrap +
         PartialEq + PartialOrd +
         Neg<Output = Self> +
@@ -18,14 +18,93 @@ where
     fn clamp(self, min: Self, max: Self) -> Self;
 }
 
-pub trait Singular {
+pub trait Singular: Copy + Eq + Ord {
     type Plural: Unit;
 }
 
 /// Indicates that the parameter is expected as a ratio of x units of `T` per y units of `U`
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Ratio<T: Unit, U: Unit>(pub T, pub U::One);
 
-pub trait Angular: Sized + Unit {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct OneToOne<T: Singular, U: Singular>(pub T, pub U);
+
+impl<T: Singular, U: Singular> Singular for OneToOne<T, U> {
+    type Plural = Ratio<T::Plural, U::Plural>;
+}
+
+impl<T: Unit, U: Unit> Unit for Ratio<T, U> {
+    type One = OneToOne<T::One, U::One>;
+
+    fn clamp(self, min: Self, max: Self) -> Self {
+        todo!()
+    }
+}
+
+impl<T: Unit, U: Unit> Neg for Ratio<T, U> {
+    type Output = Self;
+    #[inline]
+    fn neg(self) -> Self::Output { Self(self.0.neg(), self.1) }
+}
+impl<T: Unit, U: Unit> Add for Ratio<T, U> {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output { Self(self.0.add(rhs.0), self.1) }
+}
+impl<T: Unit, U: Unit> AddAssign for Ratio<T, U> {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) { self.0.add_assign(rhs.0) }
+}
+impl<T: Unit, U: Unit> Sub for Ratio<T, U> {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output { Self(self.0.sub(rhs.0), self.1) }
+}
+impl<T: Unit, U: Unit> SubAssign for Ratio<T, U> {
+    #[inline]
+    fn sub_assign(&mut self, rhs: Self) { self.0.sub_assign(rhs.0) }
+}
+impl<T: Unit, U: Unit> Mul<f32> for Ratio<T, U> {
+    type Output = Self;
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output { Self(self.0.mul(rhs), self.1) }
+}
+impl<T: Unit, U: Unit> MulAssign<f32> for Ratio<T, U> {
+    #[inline]
+    fn mul_assign(&mut self, rhs: f32) { self.0.mul_assign(rhs) }
+}
+impl<T: Unit, U: Unit> Div<f32> for Ratio<T, U> {
+    type Output = Self;
+    #[inline]
+    fn div(self, rhs: f32) -> Self::Output { Self(self.0.div(rhs), self.1) }
+}
+impl<T: Unit, U: Unit> DivAssign<f32> for Ratio<T, U> {
+    #[inline]
+    fn div_assign(&mut self, rhs: f32) { self.0.div_assign(rhs) }
+}
+impl<T: Unit, U: Unit> Wrap for Ratio<T, U> {
+    #[inline]
+    fn wrap(self, min: Self, max: Self) -> Self { Self(self.0.wrap(min.0, max.0), self.1) }
+}
+
+impl<T: Unit, U: Unit> Ratio<T, U> {
+    pub const fn of(delta: T, step: U::One) -> Self {
+        Self(delta, step)
+    }
+}
+
+#[macro_export]
+macro_rules! ratio {
+    ($delta:literal $unit:ident / $step:ident) => {
+        Ratio::of($unit($delta), $step)
+    };
+
+    ($delta:literal $unit:ident / $step:ident^2) => {
+        Ratio::of(Ratio::of($unit($delta), $step), $step)
+    };
+}
+
+pub trait Angular: Unit {
     /// 0 | 0 degrees
     const ZERO: Self;
     /// 1/16 turn
@@ -71,10 +150,28 @@ macro_rules! define_unit {
         $singular:ident
     ) => {
         $(#[$singluar_meta])*
+        #[derive(Debug, Clone, Copy)]
         pub struct $singular;
 
         impl Singular for $singular {
             type Plural = $unit;
+        }
+
+        impl PartialEq for $singular {
+            fn eq(&self, _: &Self) -> bool {
+                true
+            }
+        }
+        impl Eq for $singular {}
+        impl PartialOrd for $singular {
+            fn partial_cmp(&self, _: &Self) -> Option<std::cmp::Ordering> {
+                Some(Ordering::Equal)
+            }
+        }
+        impl Ord for $singular {
+            fn cmp(&self, _: &Self) -> Ordering {
+                Ordering::Equal
+            }
         }
 
         $(#[$unit_meta])*
@@ -230,3 +327,20 @@ define_unit!(
     /// One second
     Second
 );
+
+// By default, f32 indicates distance units.
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct OneUnit;
+
+impl Singular for OneUnit {
+    type Plural = f32;
+}
+
+impl Unit for f32 {
+    type One = OneUnit;
+
+    fn clamp(self, min: Self, max: Self) -> Self {
+        self.clamp(min, max)
+    }
+}
