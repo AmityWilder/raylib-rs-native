@@ -1,5 +1,5 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use super::{matrix::Matrix, vector::{Angle, DotProduct, MatrixTransform, Normalize, Vector, Vector3, Vector4}, LerpTo, Magnitude, NearEq, units::Radians};
+use crate::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[must_use]
@@ -308,7 +308,7 @@ impl Div<Quaternion> for f32 {
 
 impl LerpTo for Quaternion {
     #[inline]
-    fn lerp_to(self, target: Self, amount: f32) -> Self {
+    fn lerp_to(self, target: Self, amount: Percent) -> Self {
         Self {
             x: self.x.lerp_to(target.x, amount),
             y: self.y.lerp_to(target.y, amount),
@@ -321,13 +321,13 @@ impl LerpTo for Quaternion {
 impl Quaternion {
     #[inline]
     #[must_use]
-    pub fn nlerp_to(self, target: Self, amount: f32) -> Self {
+    pub fn nlerp_to(self, target: Self, amount: Percent) -> Normalized<Self> {
         self.lerp_to(target, amount).normalize()
     }
 
     #[inline]
     #[must_use]
-    pub fn slerp_to(self, mut target: Self, amount: f32) -> Self {
+    pub fn slerp_to(self, mut target: Self, amount: Percent) -> Self {
         let mut cos_half_theta = self.dot(target);
         if cos_half_theta < 0.0 {
             target = -target;
@@ -356,7 +356,7 @@ impl Quaternion {
 
     /// Calculate quaternion cubic spline interpolation using Cubic Hermite Spline algorithm
     /// as described in the GLTF 2.0 specification: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#interpolation-cubic
-    pub fn cubic_hermine_spline(self, out_tangent: Self, next: Self, in_tangent: Self, t: f32) -> Self {
+    pub fn cubic_hermine_spline(self, out_tangent: Self, next: Self, in_tangent: Self, t: f32) -> Normalized<Self> {
         let t2 = t  * t;
         let t3 = t2 * t;
 
@@ -369,7 +369,7 @@ impl Quaternion {
     }
 
     /// Calculate quaternion based on the rotation from one vector to another
-    pub fn from_vector3_to_vector3(from: Vector3, to: Vector3) -> Self {
+    pub fn from_vector3_to_vector3(from: Vector3, to: Vector3) -> Normalized<Self> {
         let cross = from.cross_product(to);
 
         Self {
@@ -380,7 +380,7 @@ impl Quaternion {
         }.normalize()
     }
 
-    pub fn from_axis_angle(axis: Vector3, angle: Radians) -> Self {
+    pub fn from_axis_angle(axis: Vector3, angle: Radians) -> Normalized<Self> {
         let axis = axis.normalize();
 
         let (sinres, cosres) = (angle * 0.5).sin_cos();
@@ -398,7 +398,7 @@ impl Quaternion {
             self = self.normalize();
         }
 
-        let res_angle = Radians(self.w.acos()) * 2.0;
+        let res_angle = self.w.acos() * 2.0;
         let den = (1.0 - self.w * self.w).sqrt();
 
         let res_axis = if den > f32::EPSILON {
@@ -433,16 +433,16 @@ impl Quaternion {
         // Roll (x-axis rotation)
         let x0 =       2.0 * (self.w * self.x + self.y * self.z);
         let x1 = 1.0 - 2.0 * (self.x * self.x + self.y * self.y);
-        let roll = Radians(x0.atan2(x1));
+        let roll = x0.atan2(x1);
 
         // Pitch (y-axis rotation)
         let y0 = 2.0 * (self.w * self.y - self.z * self.x).clamp(-1.0, 1.0);
-        let pitch = Radians(y0.asin());
+        let pitch = y0.asin();
 
         // Yaw (z-axis rotation)
         let z0 =       2.0 * (self.w * self.z + self.x * self.y);
         let z1 = 1.0 - 2.0 * (self.y * self.y + self.z * self.z);
-        let yaw = Radians(z0.atan2(z1));
+        let yaw = z0.atan2(z1);
 
         (roll, pitch, yaw)
     }

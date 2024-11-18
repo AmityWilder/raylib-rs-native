@@ -1,4 +1,4 @@
-use crate::math::{units::Degrees, LerpTo};
+use crate::prelude::*;
 
 /// Color, 4 components, R8G8B8A8 (32bit)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -28,7 +28,7 @@ pub fn rgba(r: u8, g: u8, b: u8, a: f32) -> Color {
 
 /// Get a Color from HSV values, hue [0..360], saturation/value [0..1]
 #[inline]
-pub fn hsl(hue: Degrees, saturation: f32, value: f32) -> Color {
+pub fn hsv(hue: Degrees, saturation: Percent, value: Percent) -> Color {
     todo!()
 }
 
@@ -67,17 +67,17 @@ impl Color {
     }
 
     /// Get HSV values for a Color, hue [0..360], saturation/value [0..1]
-    pub fn to_hsl(self) -> (Degrees, f32, f32) {
+    pub fn to_hsv(self) -> (Degrees, f32, f32) {
         todo!()
     }
 
-    pub fn alpha(self, a: f32) -> Self {
+    pub fn alpha(self, a: Percent) -> Self {
         todo!()
     }
 }
 
 impl LerpTo for Color {
-    fn lerp_to(self, target: Self, amount: f32) -> Self {
+    fn lerp_to(self, target: Self, amount: Percent) -> Self {
         todo!()
     }
 }

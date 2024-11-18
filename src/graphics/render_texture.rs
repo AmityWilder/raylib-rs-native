@@ -1,4 +1,5 @@
-use super::{texture::Texture, GlFrameBufferID};
+use crate::prelude::*;
+use super::GlFrameBufferID;
 
 /// `RenderTexture`, fbo for texture rendering
 pub struct RenderTexture {

@@ -96,13 +96,60 @@
     clippy::missing_safety_doc,
 )]
 
+pub const RAYLIB_VERSION: &'static str = "5.5";
+
+mod external;
+pub mod core;
+mod rlgl;
+pub mod utils;
 pub mod color;
 pub mod math;
 pub mod shapes;
 pub mod graphics;
 pub mod audio;
-pub mod input;
 
 pub mod prelude {
-    // todo
+    pub use super::{
+        core::{
+            *,
+            window::*,
+            input::*,
+        },
+        utils::*,
+        color::*,
+        math::{
+            *,
+            indicators::*,
+            matrix::*,
+            quaternion::*,
+            ray::*,
+            transform::*,
+            vector::*,
+        },
+        graphics::{
+            *,
+            model::{
+                *,
+                animation::*,
+                material::*,
+                mesh::*,
+            },
+            drawing::{
+                *,
+            },
+            camera::*,
+            font::*,
+            image::*,
+            pixel_format::*,
+            render_texture::*,
+            shader::*,
+            texture::*,
+        },
+        shapes::{
+            *,
+            circle::*,
+            rectangle::*,
+            triangle::*,
+        },
+    };
 }

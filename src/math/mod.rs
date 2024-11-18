@@ -1,7 +1,11 @@
+use crate::prelude::*;
+
 pub mod vector;
 pub mod quaternion;
 pub mod matrix;
-pub mod units;
+pub mod transform;
+pub mod ray;
+pub mod indicators;
 
 pub trait Wrap {
     #[must_use]
@@ -64,12 +68,12 @@ pub trait Lerp<T = Self> {
 }
 
 /// Linear interpolate from self to another target
-pub trait LerpTo<Amount = f32> {
+pub trait LerpTo {
     #[must_use]
-    fn lerp_to(self, target: Self, amount: Amount) -> Self;
+    fn lerp_to(self, target: Self, amount: Percent) -> Self;
 }
 
-impl<T: LerpTo<Amount>, Amount> Lerp<T> for Amount {
+impl<T: LerpTo> Lerp<T> for f32 {
     #[inline]
     fn lerp(self, start: T, end: T) -> T {
         start.lerp_to(end, self)
@@ -78,7 +82,7 @@ impl<T: LerpTo<Amount>, Amount> Lerp<T> for Amount {
 
 impl LerpTo for f32 {
     #[inline]
-    fn lerp_to(self, target: Self, amount: f32) -> Self {
+    fn lerp_to(self, target: Self, amount: Percent) -> Self {
         self + amount * (target - self)
     }
 }

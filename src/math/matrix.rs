@@ -1,5 +1,5 @@
 use std::ops::{Add, Mul, Sub};
-use super::{quaternion::Quaternion, vector::{DotProduct, Normalize, Vector3}, Magnitude, NearEq, units::Radians};
+use crate::prelude::*;
 
 /// Matrix, 4x4 components, column major, OpenGL style, right-handed
 ///

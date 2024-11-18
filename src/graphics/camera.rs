@@ -1,11 +1,11 @@
-use crate::{math::{matrix::Matrix, units::{Degrees, Radians, Ratio, Second, Seconds}, vector::{Angle, Normalize, Vector3}, Distance}, ratio};
+use crate::prelude::*;
 
 pub struct Camera3D {
-    pub position: Vector3,
+    pub position: Position3,
     /// Camera target it looks-at
-    pub target: Vector3,
+    pub target: Position3,
     /// Camera up vector (rotation over its axis)
-    pub up: Vector3,
+    pub up: Direction3,
     /// Camera field-of-view aperture in Y (degrees) in perspective, used as near plane width in orthographic
     pub fovy: Degrees,
     pub projection: CameraProjection,
@@ -43,7 +43,7 @@ impl Camera {
         forward.cross_product(up).normalize()
     }
 
-    pub fn move_forward(&mut self, distance: f32, move_in_world_plane: bool) {
+    pub fn move_forward(&mut self, distance: Units, move_in_world_plane: bool) {
         let mut forward = self.forward();
 
         if move_in_world_plane {
@@ -57,14 +57,14 @@ impl Camera {
         self.target   += forward;
     }
 
-    pub fn move_up(&mut self, distance: f32) {
+    pub fn move_up(&mut self, distance: Units) {
         let up = self.up() * distance;
 
         self.position += up;
         self.target   += up;
     }
 
-    pub fn move_right(&mut self, distance: f32, move_in_world_plane: bool) {
+    pub fn move_right(&mut self, distance: Units, move_in_world_plane: bool) {
         let mut right = self.right();
 
         if move_in_world_plane {
@@ -78,7 +78,7 @@ impl Camera {
         self.target   += right;
     }
 
-    pub fn move_to_target(&mut self, delta: f32) {
+    pub fn move_to_target(&mut self, delta: Units) {
         let distance = (self.position.distance(self.target) + delta).max(f32::EPSILON);
         self.position = self.target + self.forward() * -distance;
     }
@@ -117,10 +117,10 @@ impl Camera {
             // to allow only viewing straight up or down.
 
             // Clamp view up
-            let max_angle_up = up.angle(target_position) - Radians(0.001);
+            let max_angle_up = up.angle(target_position) - 0.001;
 
             // Clamp view down
-            let max_angle_down = -(-up).angle(target_position) + Radians(0.001);
+            let max_angle_down = -(-up).angle(target_position) + 0.001;
 
             angle = angle.clamp(max_angle_down, max_angle_up)
         }
@@ -163,12 +163,12 @@ impl Camera {
     pub const CULL_DISTANCE_NEAR: f32 =    0.01;
     pub const CULL_DISTANCE_FAR:  f32 = 1000.0 ;
 
-    pub const MOVE_SPEED: f32 = 5.4;
-    pub const PAN_SPEED:  f32 = 0.2;
+    pub const MOVE_SPEED: Ratio<f32, Second> = Ratio(5.4, Second);
+    pub const PAN_SPEED:  Ratio<f32, Second> = Ratio(0.2, Second);
 
     /// Camera orbital speed in CAMERA_ORBITAL mode
-    pub const ORBITAL_SPEED:  Ratio<Radians, Seconds> = ratio!(0.5  Radians / Second);
-    pub const ROTATION_SPEED: Ratio<Radians, Seconds> = ratio!(0.03 Radians / Second);
+    pub const ORBITAL_SPEED:  Ratio<Radians, Second> = Ratio(0.5 , Second);
+    pub const ROTATION_SPEED: Ratio<Radians, Second> = Ratio(0.03, Second);
 
     pub const MOUSE_MOVE_SENSITIVITY: f32 = 0.003;
 }

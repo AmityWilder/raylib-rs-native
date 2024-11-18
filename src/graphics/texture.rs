@@ -1,4 +1,5 @@
-use super::{pixel_format::PixelFormat, GlTextureID};
+use crate::prelude::*;
+use super::GlTextureID;
 
 /// Texture, tex data stored in GPU memory (VRAM)
 pub struct Texture {

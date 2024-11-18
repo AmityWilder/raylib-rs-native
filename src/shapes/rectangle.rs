@@ -1,4 +1,4 @@
-use crate::math::vector::Vector2;
+use crate::prelude::*;
 
 /// Rectangle, 4 components
 pub struct Rectangle {
@@ -13,6 +13,12 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
+    #[inline]
+    #[must_use]
+    pub const fn new(x: f32, y: f32, width: f32, height: f32) -> Self {
+        Self { x, y, width, height }
+    }
+
     #[inline]
     #[must_use]
     pub const fn x_min(&self) -> f32 {
@@ -50,8 +56,8 @@ impl Rectangle {
     }
 
     #[inline]
-    pub fn center(&self) -> Vector2 {
-        Vector2 {
+    pub fn center(&self) -> Position2 {
+        Position2 {
             x: self.center_x(),
             y: self.center_y(),
         }

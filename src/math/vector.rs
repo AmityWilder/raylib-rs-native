@@ -1,5 +1,5 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-use super::{matrix::Matrix, Distance, LerpTo, Magnitude, NearEq, units::Radians};
+use crate::prelude::*;
 
 pub trait DotProduct {
     #[must_use]
@@ -14,7 +14,7 @@ pub trait MatrixTransform {
 /// Vector normalization
 pub trait Normalize {
     #[must_use]
-    fn normalize(self) -> Self;
+    fn normalize(self) -> Normalized<Self>;
 }
 
 pub trait Angle {
@@ -35,7 +35,7 @@ pub trait Vector:
 
 impl<T: Vector> Normalize for T {
     #[inline]
-    fn normalize(self) -> Self {
+    fn normalize(self) -> Normalized<Self> {
         self / self.magnitude()
     }
 }
@@ -312,7 +312,7 @@ impl Div<Vector2> for f32 {
 
 impl LerpTo for Vector2 {
     #[inline]
-    fn lerp_to(self, target: Self, amount: f32) -> Self {
+    fn lerp_to(self, target: Self, amount: Percent) -> Self {
         Self {
             x: self.x.lerp_to(target.x, amount),
             y: self.y.lerp_to(target.y, amount),
@@ -648,7 +648,7 @@ impl Div<Vector3> for f32 {
 
 impl LerpTo for Vector3 {
     #[inline]
-    fn lerp_to(self, target: Self, amount: f32) -> Self {
+    fn lerp_to(self, target: Self, amount: Percent) -> Self {
         Self {
             x: self.x.lerp_to(target.x, amount),
             y: self.y.lerp_to(target.y, amount),
@@ -964,7 +964,7 @@ impl Div<Vector4> for f32 {
 
 impl LerpTo for Vector4 {
     #[inline]
-    fn lerp_to(self, target: Self, amount: f32) -> Self {
+    fn lerp_to(self, target: Self, amount: Percent) -> Self {
         Self {
             x: self.x.lerp_to(target.x, amount),
             y: self.y.lerp_to(target.y, amount),

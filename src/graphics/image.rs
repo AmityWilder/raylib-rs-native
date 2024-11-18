@@ -1,4 +1,4 @@
-use super::pixel_format::PixelFormat;
+use crate::prelude::*;
 
 /// Image, pixel data stored in CPU memory (RAM)
 pub struct Image {

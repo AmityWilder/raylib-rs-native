@@ -1,6 +1,4 @@
-use crate::shapes::rectangle::Rectangle;
-
-use super::{image::Image, texture::Texture2D};
+use crate::prelude::*;
 
 /// `GlyphInfo`, font characters glyphs info
 pub struct GlyphInfo {
