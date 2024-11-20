@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use crate::{external::msf_gif::MsfGifResult, prelude::*, tracelog};
+use crate::{external::msf_gif::{MsfGifResult, MsfGifState}, prelude::*, tracelog};
 use input::Input;
 use window::Window;
 
@@ -97,7 +97,7 @@ pub struct Storage {
 }
 
 #[derive(Debug, Default)]
-struct Time {
+pub struct Time {
     /// Current time measure
     current: f64,
     /// Previous time measure
@@ -117,7 +117,8 @@ struct Time {
 }
 
 /// Core global state context data
-struct Core<'a, 'b, 'c> {
+pub struct Core<'a, 'b, 'c> {
+    pub tracelog: TraceLog,
     pub window: Window<'a, 'b>,
     pub storage: Storage,
     pub input: Input,
@@ -129,23 +130,24 @@ struct Core<'a, 'b, 'c> {
     automation_event_recording: bool,
 
     /// Screenshots counter
-    #[cfg(support_screen_capture)]
+    #[cfg(feature = "screen_capture")]
     screenshot_counter: usize,
 
-    /// GIF frames counter
-    #[cfg(support_gif_recording)]
-    gif_frame_counter: u32,
-    /// GIF recording state
-    #[cfg(support_gif_recording)]
-    gif_recording: bool,
-    /// MSGIF context state
-    #[cfg(support_gif_recording)]
-    gif_state: MsfGifState,
+    // /// GIF frames counter
+    // #[cfg(feature = "gif_recording")]
+    // gif_frame_counter: u32,
+    // /// GIF recording state
+    // #[cfg(feature = "gif_recording")]
+    // gif_recording: bool,
+    // /// MSGIF context state
+    // #[cfg(feature = "gif_recording")]
+    // gif_state: MsfGifState,
 }
 
 impl<'a, 'b, 'c> Default for Core<'a, 'b, 'c> {
     fn default() -> Self {
         Self {
+            tracelog: Default::default(),
             window: Default::default(),
             storage: Default::default(),
             input: Default::default(),
@@ -154,22 +156,22 @@ impl<'a, 'b, 'c> Default for Core<'a, 'b, 'c> {
             current_event_list: None,
             automation_event_recording: false,
 
-            #[cfg(support_screen_capture)]
+            #[cfg(feature = "screen_capture")]
             screenshot_counter: 0,
 
-            #[cfg(support_gif_recording)]
-            gif_frame_counter: 0,
-            #[cfg(support_gif_recording)]
-            gif_recording: false,
-            #[cfg(support_gif_recording)]
-            gif_state: Default::default(),
+            // #[cfg(feature = "gif_recording")]
+            // gif_frame_counter: 0,
+            // #[cfg(feature = "gif_recording")]
+            // gif_recording: false,
+            // #[cfg(feature = "gif_recording")]
+            // gif_state: Default::default(),
         }
     }
 }
 
 impl<'a, 'b, 'c> Drop for Core<'a, 'b, 'c> {
     fn drop(&mut self) {
-        if cfg!(support_gif_recording) {
+        if cfg!(feature = "gif_recording") {
             todo!()
             // if gif_recording {
             //     let result: MsfGifResult = msf_gif_end(&gif_state);
@@ -178,7 +180,7 @@ impl<'a, 'b, 'c> Drop for Core<'a, 'b, 'c> {
             // }
         }
 
-        // if cfg!(support_module_rtext) && cfg!(support_default_font) {
+        // if cfg!(feature = "module_rtext") && cfg!(support_default_font) {
         //     UnloadFontDefault();        // WARNING: Module required: rtext
         // }
 
@@ -197,57 +199,58 @@ impl<'a, 'b, 'c> Drop for Core<'a, 'b, 'c> {
 impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
     /// Initialize window and OpenGL context
     pub fn new(width: u32, height: u32, title: &'a str) -> Self {
-        tracelog!(TraceLogLevel::Info, "Initializing raylib {}", crate::RAYLIB_VERSION);
+        let mut log = TraceLog::default();
+        tracelog!(log, Info, "Initializing raylib {}", crate::RAYLIB_VERSION);
 
         if cfg!(platform_desktop_glfw) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: DESKTOP (GLFW)");
+            tracelog!(log, Info, "Platform backend: DESKTOP (GLFW)");
         } else if cfg!(platform_desktop_sdl) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: DESKTOP (SDL)");
+            tracelog!(log, Info, "Platform backend: DESKTOP (SDL)");
         } else if cfg!(platform_desktop_rgfw) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: DESKTOP (RGFW)");
+            tracelog!(log, Info, "Platform backend: DESKTOP (RGFW)");
         } else if cfg!(platform_web) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: WEB (HTML5)");
+            tracelog!(log, Info, "Platform backend: WEB (HTML5)");
         } else if cfg!(platform_drm) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: NATIVE DRM");
-        } else if cfg!(platform_android) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: ANDROID");
+            tracelog!(log, Info, "Platform backend: NATIVE DRM");
+        } else if cfg!(target_os="android") {
+            tracelog!(log, Info, "Platform backend: ANDROID");
         } else {
             // TODO: Include your custom platform backend!
             // i.e software rendering backend or console backend!
-            tracelog!(TraceLogLevel::Info, "Platform backend: CUSTOM");
+            tracelog!(log, Info, "Platform backend: CUSTOM");
         }
 
-        tracelog!(TraceLogLevel::Info, "Supported raylib modules:");
-        tracelog!(TraceLogLevel::Info, "    > rcore:..... loaded (mandatory)");
-        tracelog!(TraceLogLevel::Info, "    > rlgl:...... loaded (mandatory)");
-        if cfg!(support_module_rshapes) {
-            tracelog!(TraceLogLevel::Info, "    > rshapes:... loaded (optional)");
+        tracelog!(log, Info, "Supported raylib modules:");
+        tracelog!(log, Info, "    > rcore:..... loaded (mandatory)");
+        tracelog!(log, Info, "    > rlgl:...... loaded (mandatory)");
+        if cfg!(feature = "module_rshapes") {
+            tracelog!(log, Info, "    > rshapes:... loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rshapes:... not loaded (optional)");
+            tracelog!(log, Info, "    > rshapes:... not loaded (optional)");
         }
 
-        if cfg!(support_module_rtextures) {
-            tracelog!(TraceLogLevel::Info, "    > rtextures:. loaded (optional)");
+        if cfg!(feature = "module_rtextures") {
+            tracelog!(log, Info, "    > rtextures:. loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rtextures:. not loaded (optional)");
+            tracelog!(log, Info, "    > rtextures:. not loaded (optional)");
         }
 
-        if cfg!(support_module_rtext) {
-            tracelog!(TraceLogLevel::Info, "    > rtext:..... loaded (optional)");
+        if cfg!(feature = "module_rtext") {
+            tracelog!(log, Info, "    > rtext:..... loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rtext:..... not loaded (optional)");
+            tracelog!(log, Info, "    > rtext:..... not loaded (optional)");
         }
 
-        if cfg!(support_module_rmodels) {
-            tracelog!(TraceLogLevel::Info, "    > rmodels:... loaded (optional)");
+        if cfg!(feature = "module_rmodels") {
+            tracelog!(log, Info, "    > rmodels:... loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rmodels:... not loaded (optional)");
+            tracelog!(log, Info, "    > rmodels:... not loaded (optional)");
         }
 
-        if cfg!(support_module_raudio) {
-            tracelog!(TraceLogLevel::Info, "    > raudio:.... loaded (optional)");
+        if cfg!(feature = "module_raudio") {
+            tracelog!(log, Info, "    > raudio:.... loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > raudio:.... not loaded (optional)");
+            tracelog!(log, Info, "    > raudio:.... not loaded (optional)");
         }
 
         let mut core = Self::default();
@@ -281,12 +284,12 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         // // Setup default viewport
         // SetupViewport(core.window.current_fbo.width, core.window.current_fbo.height);
 
-        // if cfg!(support_module_rtext) {
+        // if cfg!(feature = "module_rtext") {
         //     if cfg!(support_default_font) {
         //         // Load default font
         //         // WARNING: External function: Module required: rtext
         //         LoadFontDefault();
-        //         if cfg!(support_module_rshapes) {
+        //         if cfg!(feature = "module_rshapes") {
         //             // Set font white rectangle for shapes drawing, so shapes and text can be batched together
         //             // WARNING: rshapes module is required, if not available, default internal white rectangle is used
         //             let rec = GetFontDefault().recs[95];
@@ -300,7 +303,7 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         //         }
         //     }
         // } else {
-        //     if cfg!(support_module_rshapes) {
+        //     if cfg!(feature = "module_rshapes") {
         //         // Set default texture and rectangle to be used for shapes drawing
         //         // NOTE: rlgl default texture is a 1x1 pixel UNCOMPRESSED_R8G8B8A8
         //         let texture = Texture {
@@ -321,7 +324,7 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         // // Initialize random seed
         // SetRandomSeed(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as u32);
 
-        // tracelog!(TraceLogLevel::Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
+        // tracelog!(log, Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
 
         core
     }
