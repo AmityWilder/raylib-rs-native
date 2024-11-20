@@ -25,7 +25,7 @@ pub enum TraceLogLevel {
 #[macro_export]
 macro_rules! tracelog {
     ($level:expr, $fmt:literal $(, $args:expr)* $(,)?) => {
-        if cfg!(support_tracelog) {
+        if cfg!(feature = "support_tracelog") {
             trace_log($level, format_args!($fmt, $($args),*));
         }
     };
@@ -68,13 +68,15 @@ pub const MAX_TRACELOG_MSG_LENGTH: usize = 256;
 
 // Show trace log messages (LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_DEBUG)
 pub fn trace_log(log_type: TraceLogLevel, args: std::fmt::Arguments) {
-    if cfg!(support_tracelog_debug) {
+    if cfg!(feature = "support_tracelog_debug") {
         // Message has level below current threshold, don't emit
         if log_type < unsafe { LOG_TYPE_LEVEL } {
+            println!("below threshold");
             return;
         }
 
         if let Some(callback) = unsafe { TRACE_LOG.as_mut() } {
+            println!("custom callback");
             (callback)(log_type, args);
             return;
         }
@@ -91,6 +93,7 @@ pub fn trace_log(log_type: TraceLogLevel, args: std::fmt::Arguments) {
             //     _ => (),
             // }
         } else {
+            println!("normal");
             let mut stdout = std::io::stdout();
             match log_type {
                 TraceLogLevel::Trace   => _ = stdout.write(b"TRACE: "  ),
@@ -107,6 +110,7 @@ pub fn trace_log(log_type: TraceLogLevel, args: std::fmt::Arguments) {
 
         // If fatal logging, exit program
         if log_type == unsafe { LOG_FATAL } {
+            println!("fatal");
             std::process::exit(1);
         }
     } // SUPPORT_TRACELOG

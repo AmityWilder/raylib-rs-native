@@ -1,5 +1,7 @@
 use raylib_rs_native::{prelude::*, tracelog};
 
 fn main() {
-    tracelog!(TraceLogLevel::Info, "test");
+    println!("start");
+    tracelog!(TraceLogLevel::Warning, "test");
+    println!("finish");
 }

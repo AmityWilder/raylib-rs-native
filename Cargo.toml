@@ -9,3 +9,7 @@ edition = "2021"
 
 [dependencies]
 bitflags = "2.6.0"
+
+[features]
+default = ["support_tracelog_debug"]
+support_tracelog_debug = []
