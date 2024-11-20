@@ -4,6 +4,13 @@ use crate::prelude::*;
 /// Matrix, 4x4 components, column major, OpenGL style, right-handed
 ///
 /// Array of rows; each row is an array of columns
+///
+/// ```
+/// m0 == [0][0], m4 == [0][1], m8  == [0][2], m12 == [0][3],
+/// m1 == [1][0], m5 == [1][1], m9  == [1][2], m13 == [1][3],
+/// m2 == [2][0], m6 == [2][1], m10 == [2][2], m14 == [2][3],
+/// m3 == [3][0], m7 == [3][1], m11 == [3][2], m15 == [3][3],
+/// ```
 #[derive(Debug, Clone, PartialEq, Default)]
 #[must_use]
 pub struct Matrix(pub [[f32; 4]; 4]);

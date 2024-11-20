@@ -178,25 +178,25 @@ impl<'a, 'b, 'c> Drop for Core<'a, 'b, 'c> {
             // }
         }
 
-        if cfg!(support_module_rtext) && cfg!(support_default_font) {
-            UnloadFontDefault();        // WARNING: Module required: rtext
-        }
+        // if cfg!(support_module_rtext) && cfg!(support_default_font) {
+        //     UnloadFontDefault();        // WARNING: Module required: rtext
+        // }
 
-        rlglClose();                // De-init rlgl
+        // rlglClose();                // De-init rlgl
 
-        // De-initialize platform
-        //--------------------------------------------------------------
-        ClosePlatform();
-        //--------------------------------------------------------------
+        // // De-initialize platform
+        // //--------------------------------------------------------------
+        // ClosePlatform();
+        // //--------------------------------------------------------------
 
-        self.window.ready = false;
-        tracelog!(TraceLogLevel::Info, "Window closed successfully");
+        // self.window.ready = false;
+        // tracelog!(TraceLogLevel::Info, "Window closed successfully");
     }
 }
 
 impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
     /// Initialize window and OpenGL context
-    pub fn new(width: u32, height: u32, title: &str) -> Self {
+    pub fn new(width: u32, height: u32, title: &'a str) -> Self {
         tracelog!(TraceLogLevel::Info, "Initializing raylib {}", crate::RAYLIB_VERSION);
 
         if cfg!(platform_desktop_glfw) {
@@ -268,60 +268,60 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         core.input.mouse.cursor = MouseCursor::Arrow;
         core.input.gamepad.last_button_pressed = None;
 
-        // Initialize platform
-        //--------------------------------------------------------------
-        InitPlatform();
-        //--------------------------------------------------------------
+        // // Initialize platform
+        // //--------------------------------------------------------------
+        // InitPlatform();
+        // //--------------------------------------------------------------
 
-        // Initialize rlgl default data (buffers and shaders)
-        // NOTE: core.window.current_fbo.width and core.window.current_fbo.height not used, just stored as globals in rlgl
-        rlglInit(core.window.current_fbo.width, core.window.current_fbo.height);
-        core.is_gpu_ready = true; // Flag to note GPU has been initialized successfully
+        // // Initialize rlgl default data (buffers and shaders)
+        // // NOTE: core.window.current_fbo.width and core.window.current_fbo.height not used, just stored as globals in rlgl
+        // rlglInit(core.window.current_fbo.width, core.window.current_fbo.height);
+        // core.is_gpu_ready = true; // Flag to note GPU has been initialized successfully
 
-        // Setup default viewport
-        SetupViewport(core.window.current_fbo.width, core.window.current_fbo.height);
+        // // Setup default viewport
+        // SetupViewport(core.window.current_fbo.width, core.window.current_fbo.height);
 
-        if cfg!(support_module_rtext) {
-            if cfg!(support_default_font) {
-                // Load default font
-                // WARNING: External function: Module required: rtext
-                LoadFontDefault();
-                if cfg!(support_module_rshapes) {
-                    // Set font white rectangle for shapes drawing, so shapes and text can be batched together
-                    // WARNING: rshapes module is required, if not available, default internal white rectangle is used
-                    let rec = GetFontDefault().recs[95];
-                    if core.window.flags.contains(ConfigFlags::MSAA4xHint) {
-                        // NOTE: We try to maxime rec padding to avoid pixel bleeding on MSAA filtering
-                        SetShapesTexture(GetFontDefault().texture, (Rectangle){ rec.x + 2, rec.y + 2, 1, 1 });
-                    } else {
-                        // NOTE: We set up a 1px padding on char rectangle to avoid pixel bleeding
-                        SetShapesTexture(GetFontDefault().texture, (Rectangle){ rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2 });
-                    }
-                }
-            }
-        } else {
-            if cfg!(support_module_rshapes) {
-                // Set default texture and rectangle to be used for shapes drawing
-                // NOTE: rlgl default texture is a 1x1 pixel UNCOMPRESSED_R8G8B8A8
-                let texture = Texture {
-                    id: rlGetTextureIdDefault(),
-                    width: 1,
-                    height: 1,
-                    mipmap: 1,
-                    format: PixelFormat::UncompressedR8G8B8A8,
-                };
-                // WARNING: Module required: rshapes
-                SetShapesTexture(texture, Rectangle::new(0.0, 0.0, 1.0, 1.0));
-            }
-        }
+        // if cfg!(support_module_rtext) {
+        //     if cfg!(support_default_font) {
+        //         // Load default font
+        //         // WARNING: External function: Module required: rtext
+        //         LoadFontDefault();
+        //         if cfg!(support_module_rshapes) {
+        //             // Set font white rectangle for shapes drawing, so shapes and text can be batched together
+        //             // WARNING: rshapes module is required, if not available, default internal white rectangle is used
+        //             let rec = GetFontDefault().recs[95];
+        //             if core.window.flags.contains(ConfigFlags::MSAA4xHint) {
+        //                 // NOTE: We try to maxime rec padding to avoid pixel bleeding on MSAA filtering
+        //                 SetShapesTexture(GetFontDefault().texture, (Rectangle){ rec.x + 2, rec.y + 2, 1, 1 });
+        //             } else {
+        //                 // NOTE: We set up a 1px padding on char rectangle to avoid pixel bleeding
+        //                 SetShapesTexture(GetFontDefault().texture, (Rectangle){ rec.x + 1, rec.y + 1, rec.width - 2, rec.height - 2 });
+        //             }
+        //         }
+        //     }
+        // } else {
+        //     if cfg!(support_module_rshapes) {
+        //         // Set default texture and rectangle to be used for shapes drawing
+        //         // NOTE: rlgl default texture is a 1x1 pixel UNCOMPRESSED_R8G8B8A8
+        //         let texture = Texture {
+        //             id: rlGetTextureIdDefault(),
+        //             width: 1,
+        //             height: 1,
+        //             mipmap: 1,
+        //             format: PixelFormat::UncompressedR8G8B8A8,
+        //         };
+        //         // WARNING: Module required: rshapes
+        //         SetShapesTexture(texture, Rectangle::new(0.0, 0.0, 1.0, 1.0));
+        //     }
+        // }
 
-        core.time.frame_counter = 0;
-        core.window.should_close = false;
+        // core.time.frame_counter = 0;
+        // core.window.should_close = false;
 
-        // Initialize random seed
-        SetRandomSeed(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as u32);
+        // // Initialize random seed
+        // SetRandomSeed(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as u32);
 
-        tracelog!(TraceLogLevel::Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
+        // tracelog!(TraceLogLevel::Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
 
         core
     }

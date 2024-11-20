@@ -59,7 +59,7 @@ pub fn set_trace_log_fatal(log_type: TraceLogLevel) {
 }
 
 /// Set custom trace log
-pub fn set_trace_log_callback<'a>(callback: &'a TraceLogCallback) {
+pub fn set_trace_log_callback(callback: impl FnMut(TraceLogLevel, std::fmt::Arguments) + 'static) {
     unsafe { TRACE_LOG = Some(Box::new(callback)); }
 }
 
@@ -74,7 +74,7 @@ pub fn trace_log(log_type: TraceLogLevel, args: std::fmt::Arguments) {
             return;
         }
 
-        if let Some(callback) = unsafe { TRACE_LOG }.as_mut() {
+        if let Some(callback) = unsafe { TRACE_LOG.as_mut() } {
             (callback)(log_type, args);
             return;
         }
@@ -93,16 +93,16 @@ pub fn trace_log(log_type: TraceLogLevel, args: std::fmt::Arguments) {
         } else {
             let mut stdout = std::io::stdout();
             match log_type {
-                TraceLogLevel::Trace   => _ = stdout.write(b"TRACE: "),
-                TraceLogLevel::Debug   => _ = stdout.write(b"DEBUG: "),
-                TraceLogLevel::Info    => _ = stdout.write(b"INFO: "),
+                TraceLogLevel::Trace   => _ = stdout.write(b"TRACE: "  ),
+                TraceLogLevel::Debug   => _ = stdout.write(b"DEBUG: "  ),
+                TraceLogLevel::Info    => _ = stdout.write(b"INFO: "   ),
                 TraceLogLevel::Warning => _ = stdout.write(b"WARNING: "),
-                TraceLogLevel::Error   => _ = stdout.write(b"ERROR: "),
-                TraceLogLevel::Fatal   => _ = stdout.write(b"FATAL: "),
+                TraceLogLevel::Error   => _ = stdout.write(b"ERROR: "  ),
+                TraceLogLevel::Fatal   => _ = stdout.write(b"FATAL: "  ),
                 _ => (),
             };
             _ = stdout.write_fmt(args);
-            std::io::stdout().flush();
+            _ = std::io::stdout().flush();
         }
 
         // If fatal logging, exit program

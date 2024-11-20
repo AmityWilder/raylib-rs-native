@@ -456,8 +456,7 @@ impl From<Matrix> for Quaternion {
             mat.0[0][0] - mat.0[1][1] - mat.0[2][2],
             mat.0[1][1] - mat.0[0][0] - mat.0[2][2],
             mat.0[2][2] - mat.0[0][0] - mat.0[1][1],
-        ]
-            .into_iter()
+        ].into_iter()
             .enumerate()
             .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
             .unwrap();
@@ -465,15 +464,31 @@ impl From<Matrix> for Quaternion {
         let biggest_val = (four_biggest_squared_minus_1 + 1.0) * 0.5;
         let mult = 0.25 / biggest_val;
 
-        let a = (mat.0[2][2] - mat.0[2][1]) * mult;
-        let b = (mat.0[0][2] - mat.0[2][0]) * mult;
-        let c = (mat.0[1][0] - mat.0[1][0]) * mult;
-
         match biggest_index {
-            0 => Self { w: biggest_val, x: a, y: b, z: c, },
-            1 => Self { x: biggest_val, w: a, y: b, z: c, },
-            2 => Self { y: biggest_val, w: a, x: b, z: c, },
-            3 => Self { z: biggest_val, w: a, x: b, y: c, },
+            0 => Self {
+                w: biggest_val,
+                x: (mat.0[2][1] - mat.0[1][2]) * mult,
+                y: (mat.0[0][2] - mat.0[2][0]) * mult,
+                z: (mat.0[1][0] - mat.0[0][1]) * mult,
+            },
+            1 => Self {
+                x: biggest_val,
+                w: (mat.0[2][1] - mat.0[1][2]) * mult,
+                y: (mat.0[1][0] + mat.0[0][1]) * mult,
+                z: (mat.0[0][2] + mat.0[2][0]) * mult,
+            },
+            2 => Self {
+                y: biggest_val,
+                w: (mat.0[0][2] - mat.0[2][0]) * mult,
+                x: (mat.0[1][0] + mat.0[0][1]) * mult,
+                z: (mat.0[2][1] + mat.0[1][2]) * mult,
+            },
+            3 => Self {
+                z: biggest_val,
+                w: (mat.0[1][0] - mat.0[0][1]) * mult,
+                x: (mat.0[0][2] + mat.0[2][0]) * mult,
+                y: (mat.0[2][1] + mat.0[1][2]) * mult,
+            },
             _ => unreachable!(),
         }
     }
