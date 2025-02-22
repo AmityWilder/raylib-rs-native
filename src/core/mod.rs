@@ -141,7 +141,7 @@ pub struct Storage {
 }
 
 #[derive(Debug, Default)]
-struct Time {
+pub struct Time {
     /// Current time measure
     current: f64,
     /// Previous time measure
@@ -190,6 +190,7 @@ pub struct Core {
 impl Default for Core {
     fn default() -> Self {
         Self {
+            tracelog: Default::default(),
             window: Default::default(),
             storage: Default::default(),
             input: Default::default(),
