@@ -1,15 +1,126 @@
-workspace = { members = ["example"] }
-
 [package]
 name = "raylib-rs-native"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-bitflags = "2.6.0"
+build = "build.rs"
 
 [features]
-default = ["support_tracelog_debug"]
+default = [
+    "support_module_rshapes",
+    "support_module_rtextures",
+    "support_module_rtext",
+    "support_module_rmodels",
+    "support_module_raudio",
+    "support_camera_system",
+    "support_gestures_system",
+    "support_rprand_generator",
+    "support_mouse_gestures",
+    "support_ssh_keyboard_rpi",
+    "support_winmm_highres_timer",
+    "support_partialbusy_wait_loop",
+    "support_screen_capture",
+    "support_gif_recording",
+    "support_compression_api",
+    "support_automation_events",
+    "support_mesh_gpu_skinning",
+    "support_quads_draw_mode",
+    "support_fileformat_png",
+    "support_fileformat_gif",
+    "support_fileformat_qoi",
+    "support_fileformat_dds",
+    "support_image_export",
+    "support_image_generation",
+    "support_image_manipulation",
+    "support_default_font",
+    "support_fileformat_ttf",
+    "support_fileformat_fnt",
+    "support_text_manipulation",
+    "support_font_atlas_white_rec",
+    "support_fileformat_obj",
+    "support_fileformat_mtl",
+    "support_fileformat_iqm",
+    "support_fileformat_gltf",
+    "support_fileformat_vox",
+    "support_fileformat_m3d",
+    "support_mesh_generation",
+    "support_fileformat_wav",
+    "support_fileformat_ogg",
+    "support_fileformat_mp3",
+    "support_fileformat_qoa",
+    "support_fileformat_xm",
+    "support_fileformat_mod",
+    "support_standard_fileio",
+    "support_tracelog",
+    "support_clipboard_image",
+]
+support_module_rshapes = []
+support_module_rtextures = []
+support_module_rtext = ["support_module_rtextures"]
+support_module_rmodels = []
+support_module_raudio = []
+support_camera_system = []
+support_gestures_system = []
+support_rprand_generator = []
+support_mouse_gestures = []
+support_ssh_keyboard_rpi = []
+support_winmm_highres_timer = []
+support_busy_wait_loop = []
+support_partialbusy_wait_loop = []
+support_screen_capture = []
+support_gif_recording = []
+support_compression_api = []
+support_automation_events = []
+support_custom_frame_control = []
+support_mesh_gpu_skinning = []
+support_quads_draw_mode = []
+support_fileformat_png = []
+support_fileformat_bmp = []
+support_fileformat_tga = []
+support_fileformat_jpg = []
+support_fileformat_gif = []
+support_fileformat_qoi = []
+support_fileformat_psd = []
+support_fileformat_dds = []
+support_fileformat_hdr = []
+support_fileformat_pic = []
+support_fileformat_ktx = []
+support_fileformat_astc = []
+support_fileformat_pkm = []
+support_fileformat_pvr = []
+support_image_export = []
+support_image_generation = []
+support_image_manipulation = []
+support_default_font = []
+support_fileformat_ttf = []
+support_fileformat_fnt = []
+support_fileformat_bdf = []
+support_text_manipulation = []
+support_font_atlas_white_rec = []
+support_fileformat_obj = []
+support_fileformat_mtl = []
+support_fileformat_iqm = []
+support_fileformat_gltf = []
+support_fileformat_vox = []
+support_fileformat_m3d = []
+support_mesh_generation = []
+support_fileformat_wav = []
+support_fileformat_ogg = []
+support_fileformat_mp3 = []
+support_fileformat_qoa = []
+support_fileformat_flac = []
+support_fileformat_xm = []
+support_fileformat_mod = []
+support_standard_fileio = []
+support_tracelog = []
 support_tracelog_debug = []
+support_clipboard_image = [
+    "support_fileformat_bmp",
+    "support_fileformat_png",
+    "support_fileformat_jpg",
+    "support_module_rtextures",
+]
+rlgl_enable_opengl_debug_context = []
+rlgl_show_gl_details_info = []
+
+[dependencies]
+sdl3 = "0.14.11"

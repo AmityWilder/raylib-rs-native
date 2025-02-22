@@ -82,7 +82,7 @@
 *
 **********************************************************************************************/
 
-// This source has been heavily altered by Amy Wilder.
+//! This source code has been heavily altered by Amy Wilder.
 
 #![warn(
     clippy::pedantic,
@@ -96,11 +96,13 @@
     clippy::missing_safety_doc,
 )]
 
-pub const RAYLIB_VERSION: &'static str = "5.5";
+pub const RAYLIB_VERSION: &str = "5.5";
 
+pub mod config;
 mod external;
+mod platforms;
 pub mod core;
-mod rlgl;
+pub mod rlgl;
 pub mod utils;
 pub mod color;
 pub mod math;
@@ -152,4 +154,83 @@ pub mod prelude {
             triangle::*,
         },
     };
+}
+
+/// Trace log level
+/// NOTE: Organized by priority level
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum TraceLogType {
+    /// Trace logging, intended for internal use only
+    Trace = 1,
+    /// Debug logging, used for internal debugging, it should be disabled on release builds
+    Debug,
+    /// Info logging, used for program execution info
+    #[default]
+    Info,
+    /// Warning logging, used on recoverable failures
+    Warning,
+    /// Error logging, used on unrecoverable failures
+    Error,
+    /// Fatal logging, used to abort program: exit(EXIT_FAILURE)
+    Fatal,
+}
+
+/// Trace log level
+/// NOTE: Organized by priority level
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum TraceLogLevel {
+    /// Display all logs
+    All,
+    /// Trace logging, intended for internal use only
+    Trace,
+    /// Debug logging, used for internal debugging, it should be disabled on release builds
+    Debug,
+    /// Info logging, used for program execution info
+    #[default]
+    Info,
+    /// Warning logging, used on recoverable failures
+    Warning,
+    /// Error logging, used on unrecoverable failures
+    Error,
+    /// Fatal logging, used to abort program: exit(EXIT_FAILURE)
+    Fatal,
+    /// Disable logging
+    None,
+}
+
+impl From<TraceLogType> for TraceLogLevel {
+    fn from(value: TraceLogType) -> Self {
+        match value {
+            TraceLogType::Trace   => Self::Trace,
+            TraceLogType::Debug   => Self::Debug,
+            TraceLogType::Info    => Self::Info,
+            TraceLogType::Warning => Self::Warning,
+            TraceLogType::Error   => Self::Error,
+            TraceLogType::Fatal   => Self::Fatal,
+        }
+    }
+}
+
+impl PartialEq<TraceLogType> for TraceLogLevel {
+    fn eq(&self, other: &TraceLogType) -> bool {
+        (*self as u8).eq(&(*other as u8))
+    }
+}
+
+impl PartialEq<TraceLogLevel> for TraceLogType {
+    fn eq(&self, other: &TraceLogLevel) -> bool {
+        (*self as u8).eq(&(*other as u8))
+    }
+}
+
+impl PartialOrd<TraceLogType> for TraceLogLevel {
+    fn partial_cmp(&self, other: &TraceLogType) -> Option<std::cmp::Ordering> {
+        (*self as u8).partial_cmp(&(*other as u8))
+    }
+}
+
+impl PartialOrd<TraceLogLevel> for TraceLogType {
+    fn partial_cmp(&self, other: &TraceLogLevel) -> Option<std::cmp::Ordering> {
+        (*self as u8).partial_cmp(&(*other as u8))
+    }
 }

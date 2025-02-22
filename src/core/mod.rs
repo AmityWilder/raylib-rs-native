@@ -1,10 +1,54 @@
 use std::path::PathBuf;
-use crate::{external::msf_gif::MsfGifResult, prelude::*, tracelog};
+use crate::{external::msf_gif::MsfGifResult, prelude::*, tracelog, TraceLogType::{self, Info}};
 use input::Input;
 use window::Window;
 
 pub mod window;
 pub mod input;
+
+extern "Rust" {
+    fn WindowShouldClose() -> bool;
+    fn ToggleFullscreen();
+    fn ToggleBorderlessWindowed();
+    fn MaximizeWindow();
+    fn MinimizeWindow();
+    fn RestoreWindow();
+
+    fn SetWindowState(flags: ConfigFlags);
+    fn ClearWindowState(flags: ConfigFlags);
+
+    fn SetWindowIcon(image: &Image);
+    fn SetWindowIcons(images: &[Image]);
+    fn SetWindowTitle(title: &str);
+    fn SetWindowPosition(x: u32, y: u32);
+    fn SetWindowMonitor(monitor: sdl3::sys::video::SDL_DisplayID);
+    fn SetWindowMinSize(width: u32, height: u32);
+    fn SetWindowMaxSize(width: u32, height: u32);
+    fn SetWindowSize(width: u32, height: u32);
+    fn SetWindowOpacity(opacity: f32);
+    fn SetWindowFocused();
+    fn GetWindowHandle() -> *mut std::ffi::c_void;
+    fn GetWindowPosition() -> Vector2;
+    fn GetWindowScaleDPI() -> Vector2;
+
+    fn GetMonitorCount() -> usize;
+    fn GetCurrentMonitor() -> sdl3::sys::video::SDL_DisplayID;
+    fn GetMonitorWidth(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
+    fn GetMonitorHeight(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
+    fn GetMonitorPhysicalWidth(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
+    fn GetMonitorPhysicalHeight(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
+    fn GetMonitorRefreshRate(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
+    fn GetMonitorPosition(monitor: sdl3::sys::video::SDL_DisplayID) -> Vector2;
+    fn GetMonitorName(monitor: sdl3::sys::video::SDL_DisplayID) -> String;
+
+    fn SetClipboardText(text: &'static str);
+    fn GetClipboardText() -> String;
+
+    fn ShowCursor();
+    fn HideCursor();
+    fn EnableCursor();
+    fn DisableCursor();
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Point {
@@ -73,14 +117,14 @@ pub enum CustomEventType {
     SetTargetFps,
 }
 
-// Automation events type
+/// Automation events type
 pub enum AutomationEventType {
     Input(InputEventType),
     Window(WindowEventType),
     Custom(CustomEventType),
 }
 
-// Automation event
+/// Automation event
 pub struct AutomationEvent {
     /// Event frame
     frame: usize,
@@ -92,7 +136,7 @@ pub struct AutomationEvent {
 
 #[derive(Debug, Default)]
 pub struct Storage {
-    // Base path for data storage
+    /// Base path for data storage
     base_path: PathBuf,
 }
 
@@ -117,33 +161,33 @@ struct Time {
 }
 
 /// Core global state context data
-struct Core<'a, 'b, 'c> {
-    pub window: Window<'a, 'b>,
+pub struct Core {
+    pub window: Window,
     pub storage: Storage,
     pub input: Input,
     pub time: Time,
     is_gpu_ready: bool,
     /// Current automation events list, set by user, keep internal pointer
-    current_event_list: Option<&'c mut Vec<AutomationEvent>>,
+    current_event_list: Option<Vec<AutomationEvent>>,
     /// Recording automation events flag
     automation_event_recording: bool,
 
     /// Screenshots counter
-    #[cfg(support_screen_capture)]
+    #[cfg(feature = "support_screen_capture")]
     screenshot_counter: usize,
 
     /// GIF frames counter
-    #[cfg(support_gif_recording)]
+    #[cfg(feature = "support_gif_recording")]
     gif_frame_counter: u32,
     /// GIF recording state
-    #[cfg(support_gif_recording)]
+    #[cfg(feature = "support_gif_recording")]
     gif_recording: bool,
     /// MSGIF context state
-    #[cfg(support_gif_recording)]
+    #[cfg(feature = "support_gif_recording")]
     gif_state: MsfGifState,
 }
 
-impl<'a, 'b, 'c> Default for Core<'a, 'b, 'c> {
+impl Default for Core {
     fn default() -> Self {
         Self {
             window: Default::default(),
@@ -154,100 +198,57 @@ impl<'a, 'b, 'c> Default for Core<'a, 'b, 'c> {
             current_event_list: None,
             automation_event_recording: false,
 
-            #[cfg(support_screen_capture)]
+            #[cfg(feature = "support_screen_capture")]
             screenshot_counter: 0,
 
-            #[cfg(support_gif_recording)]
+            #[cfg(feature = "support_gif_recording")]
             gif_frame_counter: 0,
-            #[cfg(support_gif_recording)]
+            #[cfg(feature = "support_gif_recording")]
             gif_recording: false,
-            #[cfg(support_gif_recording)]
+            #[cfg(feature = "support_gif_recording")]
             gif_state: Default::default(),
         }
     }
 }
 
-impl<'a, 'b, 'c> Drop for Core<'a, 'b, 'c> {
-    fn drop(&mut self) {
-        if cfg!(support_gif_recording) {
-            todo!()
-            // if gif_recording {
-            //     let result: MsfGifResult = msf_gif_end(&gif_state);
-            //     msf_gif_free(result);
-            //     gif_recording = false;
-            // }
-        }
-
-        // if cfg!(support_module_rtext) && cfg!(support_default_font) {
-        //     UnloadFontDefault();        // WARNING: Module required: rtext
-        // }
-
-        // rlglClose();                // De-init rlgl
-
-        // // De-initialize platform
-        // //--------------------------------------------------------------
-        // ClosePlatform();
-        // //--------------------------------------------------------------
-
-        // self.window.ready = false;
-        // tracelog!(TraceLogLevel::Info, "Window closed successfully");
-    }
-}
-
-impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
+impl Core {
     /// Initialize window and OpenGL context
-    pub fn new(width: u32, height: u32, title: &'a str) -> Self {
-        tracelog!(TraceLogLevel::Info, "Initializing raylib {}", crate::RAYLIB_VERSION);
+    pub fn new(width: u32, height: u32, title: &str) -> Self {
+        tracelog!(TraceLogType::Info, "Initializing raylib {}", crate::RAYLIB_VERSION);
 
-        if cfg!(platform_desktop_glfw) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: DESKTOP (GLFW)");
-        } else if cfg!(platform_desktop_sdl) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: DESKTOP (SDL)");
-        } else if cfg!(platform_desktop_rgfw) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: DESKTOP (RGFW)");
-        } else if cfg!(platform_web) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: WEB (HTML5)");
-        } else if cfg!(platform_drm) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: NATIVE DRM");
-        } else if cfg!(platform_android) {
-            tracelog!(TraceLogLevel::Info, "Platform backend: ANDROID");
+        tracelog!(TraceLogType::Info, "Platform backend: DESKTOP (SDL)");
+
+        tracelog!(TraceLogType::Info, "Supported raylib modules:");
+        tracelog!(TraceLogType::Info, "    > rcore:..... loaded (mandatory)");
+        tracelog!(TraceLogType::Info, "    > rlgl:...... loaded (mandatory)");
+        if cfg!(feature = "support_module_rshapes") {
+            tracelog!(TraceLogType::Info, "    > rshapes:... loaded (optional)");
         } else {
-            // TODO: Include your custom platform backend!
-            // i.e software rendering backend or console backend!
-            tracelog!(TraceLogLevel::Info, "Platform backend: CUSTOM");
+            tracelog!(TraceLogType::Info, "    > rshapes:... not loaded (optional)");
         }
 
-        tracelog!(TraceLogLevel::Info, "Supported raylib modules:");
-        tracelog!(TraceLogLevel::Info, "    > rcore:..... loaded (mandatory)");
-        tracelog!(TraceLogLevel::Info, "    > rlgl:...... loaded (mandatory)");
-        if cfg!(support_module_rshapes) {
-            tracelog!(TraceLogLevel::Info, "    > rshapes:... loaded (optional)");
+        if cfg!(feature = "support_module_rtextures") {
+            tracelog!(TraceLogType::Info, "    > rtextures:. loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rshapes:... not loaded (optional)");
+            tracelog!(TraceLogType::Info, "    > rtextures:. not loaded (optional)");
         }
 
-        if cfg!(support_module_rtextures) {
-            tracelog!(TraceLogLevel::Info, "    > rtextures:. loaded (optional)");
+        if cfg!(feature = "support_module_rtext") {
+            tracelog!(TraceLogType::Info, "    > rtext:..... loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rtextures:. not loaded (optional)");
+            tracelog!(TraceLogType::Info, "    > rtext:..... not loaded (optional)");
         }
 
-        if cfg!(support_module_rtext) {
-            tracelog!(TraceLogLevel::Info, "    > rtext:..... loaded (optional)");
+        if cfg!(feature = "support_module_rmodels") {
+            tracelog!(TraceLogType::Info, "    > rmodels:... loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rtext:..... not loaded (optional)");
+            tracelog!(TraceLogType::Info, "    > rmodels:... not loaded (optional)");
         }
 
-        if cfg!(support_module_rmodels) {
-            tracelog!(TraceLogLevel::Info, "    > rmodels:... loaded (optional)");
+        if cfg!(feature = "support_module_raudio") {
+            tracelog!(TraceLogType::Info, "    > raudio:.... loaded (optional)");
         } else {
-            tracelog!(TraceLogLevel::Info, "    > rmodels:... not loaded (optional)");
-        }
-
-        if cfg!(support_module_raudio) {
-            tracelog!(TraceLogLevel::Info, "    > raudio:.... loaded (optional)");
-        } else {
-            tracelog!(TraceLogLevel::Info, "    > raudio:.... not loaded (optional)");
+            tracelog!(TraceLogType::Info, "    > raudio:.... not loaded (optional)");
         }
 
         let mut core = Self::default();
@@ -258,12 +259,12 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         core.window.event_waiting = false;
         core.window.screen_scale = Matrix::IDENTITY; // No draw scaling required by default
         if !title.is_empty() {
-            core.window.title = title;
+            core.window.title = title.to_string();
         }
 
         // Initialize global input state
         core.input = Input::default(); // Reset core.input structure to 0
-        core.input.keyboard.exit_key = Some(Key::Escape);
+        core.input.keyboard.exit_key = Some(KeyboardKey::Escape);
         core.input.mouse.scale = Vector2::new(1.0, 1.0);
         core.input.mouse.cursor = MouseCursor::Arrow;
         core.input.gamepad.last_button_pressed = None;
@@ -281,12 +282,12 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         // // Setup default viewport
         // SetupViewport(core.window.current_fbo.width, core.window.current_fbo.height);
 
-        // if cfg!(support_module_rtext) {
+        // if cfg!(feature = "support_module_rtext") {
         //     if cfg!(support_default_font) {
         //         // Load default font
         //         // WARNING: External function: Module required: rtext
         //         LoadFontDefault();
-        //         if cfg!(support_module_rshapes) {
+        //         if cfg!(feature = "support_module_rshapes") {
         //             // Set font white rectangle for shapes drawing, so shapes and text can be batched together
         //             // WARNING: rshapes module is required, if not available, default internal white rectangle is used
         //             let rec = GetFontDefault().recs[95];
@@ -300,7 +301,7 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         //         }
         //     }
         // } else {
-        //     if cfg!(support_module_rshapes) {
+        //     if cfg!(feature = "support_module_rshapes") {
         //         // Set default texture and rectangle to be used for shapes drawing
         //         // NOTE: rlgl default texture is a 1x1 pixel UNCOMPRESSED_R8G8B8A8
         //         let texture = Texture {
@@ -321,7 +322,7 @@ impl<'a, 'b, 'c> Core<'a, 'b, 'c> {
         // // Initialize random seed
         // SetRandomSeed(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as u32);
 
-        // tracelog!(TraceLogLevel::Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
+        // TRACELOG!(TraceLogType::Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
 
         core
     }

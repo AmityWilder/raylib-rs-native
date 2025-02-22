@@ -1,102 +1,143 @@
 use std::{os::raw::c_void, path::Path};
-
-use bitflags::bitflags;
 use crate::prelude::*;
 
-bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    pub struct ConfigFlags: usize {
-        /// Set to try enabling V-Sync on GPU
-        const VsyncHint              = 0x00000040;
-        /// Set to run program in fullscreen
-        const FullscreenMode         = 0x00000002;
-        /// Set to allow resizable window
-        const WindowResizable        = 0x00000004;
-        /// Set to disable window decoration (frame and buttons)
-        const WindowUndecorated      = 0x00000008;
-        /// Set to hide window
-        const WindowHidden           = 0x00000080;
-        /// Set to minimize window (iconify)
-        const WindowMinimized        = 0x00000200;
-        /// Set to maximize window (expanded to monitor)
-        const WindowMaximized        = 0x00000400;
-        /// Set to window non focused
-        const WindowUnfocused        = 0x00000800;
-        /// Set to window always on top
-        const WindowTopmost          = 0x00001000;
-        /// Set to allow windows running while minimized
-        const WindowAlwaysRun        = 0x00000100;
-        /// Set to allow transparent framebuffer
-        const WindowTransparent      = 0x00000010;
-        /// Set to support HighDPI
-        const WindowHighdpi          = 0x00002000;
-        /// Set to support mouse passthrough, only supported when FLAG_WINDOW_UNDECORATED
-        const WindowMousePassthrough = 0x00004000;
-        /// Set to run program in borderless windowed mode
-        const BorderlessWindowedMode = 0x00008000;
-        /// Set to try enabling MSAA 4X
-        const MSAA4xHint             = 0x00000020;
-        /// Set to try enabling interlaced video format (for V3D)
-        const InterlacedHint         = 0x00010000;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct ConfigFlags(pub u32);
+
+#[allow(non_upper_case_globals)]
+impl ConfigFlags {
+    /// Set to try enabling V-Sync on GPU
+    pub const VsyncHint:              Self = Self(0x00000040);
+    /// Set to run program in fullscreen
+    pub const FullscreenMode:         Self = Self(0x00000002);
+    /// Set to allow resizable window
+    pub const WindowResizable:        Self = Self(0x00000004);
+    /// Set to disable window decoration (frame and buttons)
+    pub const WindowUndecorated:      Self = Self(0x00000008);
+    /// Set to hide window
+    pub const WindowHidden:           Self = Self(0x00000080);
+    /// Set to minimize window (iconify)
+    pub const WindowMinimized:        Self = Self(0x00000200);
+    /// Set to maximize window (expanded to monitor)
+    pub const WindowMaximized:        Self = Self(0x00000400);
+    /// Set to window non focused
+    pub const WindowUnfocused:        Self = Self(0x00000800);
+    /// Set to window always on top
+    pub const WindowTopmost:          Self = Self(0x00001000);
+    /// Set to allow windows running while minimized
+    pub const WindowAlwaysRun:        Self = Self(0x00000100);
+    /// Set to allow transparent framebuffer
+    pub const WindowTransparent:      Self = Self(0x00000010);
+    /// Set to support HighDPI
+    pub const WindowHighdpi:          Self = Self(0x00002000);
+    /// Set to support mouse passthrough, only supported when FLAG_WINDOW_UNDECORATED
+    pub const WindowMousePassthrough: Self = Self(0x00004000);
+    /// Set to run program in borderless windowed mode
+    pub const BorderlessWindowedMode: Self = Self(0x00008000);
+    /// Set to try enabling MSAA 4X
+    pub const MSAA4xHint:             Self = Self(0x00000020);
+    /// Set to try enabling interlaced video format (for V3D)
+    pub const InterlacedHint:         Self = Self(0x00010000);
+
+    pub const fn has(self, flags: Self) -> bool {
+        self.0 & flags.0 != 0
     }
 }
 
-impl Default for ConfigFlags {
-    fn default() -> Self {
-        Self(Default::default())
+impl PartialEq<u32> for ConfigFlags {
+    fn eq(&self, other: &u32) -> bool {
+        self.0.eq(other)
     }
+}
+
+impl PartialOrd<u32> for ConfigFlags {
+    fn partial_cmp(&self, other: &u32) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
+impl std::ops::Not for ConfigFlags {
+    type Output = Self;
+    fn not(self) -> Self::Output { Self(self.0.not()) }
+}
+
+impl std::ops::BitAnd for ConfigFlags {
+    type Output = Self;
+    fn bitand(self, rhs: Self) -> Self::Output { Self(self.0.bitand(rhs.0)) }
+}
+
+impl std::ops::BitOr for ConfigFlags {
+    type Output = Self;
+    fn bitor(self, rhs: Self) -> Self::Output { Self(self.0.bitor(rhs.0)) }
+}
+
+impl std::ops::BitXor for ConfigFlags {
+    type Output = Self;
+    fn bitxor(self, rhs: Self) -> Self::Output { Self(self.0.bitxor(rhs.0)) }
+}
+
+impl std::ops::BitAndAssign for ConfigFlags {
+    fn bitand_assign(&mut self, rhs: Self) { self.0.bitand_assign(rhs.0) }
+}
+
+impl std::ops::BitOrAssign for ConfigFlags {
+    fn bitor_assign(&mut self, rhs: Self) { self.0.bitor_assign(rhs.0) }
+}
+
+impl std::ops::BitXorAssign for ConfigFlags {
+    fn bitxor_assign(&mut self, rhs: Self) { self.0.bitxor_assign(rhs.0) }
 }
 
 pub type MonitorID = usize;
 
 #[must_use]
 #[derive(Debug, Default)]
-pub struct Window<'a, 'b> {
+pub struct Window {
     /// Window text title const pointer
-    pub(super) title: &'a str,
+    pub title: String,
     /// Configuration flags (bit based), keeps window state
-    pub(super) flags: ConfigFlags,
+    pub flags: ConfigFlags,
     /// Check if window has been initialized successfully
-    pub(super) ready: bool,
+    pub ready: bool,
     /// Check if fullscreen mode is enabled
-    pub(super) fullscreen: bool,
+    pub fullscreen: bool,
     /// Check if window set for closing
-    pub(super) should_close: bool,
+    pub should_close: bool,
     /// Check if window has been resized last frame
-    pub(super) resized_last_frame: bool,
+    pub resized_last_frame: bool,
     /// Wait for events before ending frame
-    pub(super) event_waiting: bool,
+    pub event_waiting: bool,
     /// Using FBO (RenderTexture) for rendering instead of default framebuffer
-    pub(super) using_fbo: bool,
+    pub using_fbo: bool,
 
     /// Window position (required on fullscreen toggle)
-    pub(super) position: Point,
+    pub position: Point,
     /// Window previous position (required on borderless windowed toggle)
-    pub(super) previous_position: Point,
+    pub previous_position: Point,
     /// Display width and height (monitor, device-screen, LCD, ...)
-    pub(super) display: Size,
+    pub display: Size,
     /// Screen width and height (used render area)
-    pub(super) screen: Size,
+    pub screen: Size,
     /// Screen previous width and height (required on borderless windowed toggle)
-    pub(super) previous_screen: Size,
+    pub previous_screen: Size,
     /// Current render width and height (depends on active fbo)
-    pub(super) current_fbo: Size,
+    pub current_fbo: Size,
     /// Framebuffer width and height (render area, including black bars if required)
-    pub(super) render: Size,
+    pub render: Size,
     /// Offset from render area (must be divided by 2)
-    pub(super) render_offset: Point,
+    pub render_offset: Point,
     /// Screen minimum width and height (for resizable window)
-    pub(super) screen_min: Size,
+    pub screen_min: Size,
     /// Screen maximum width and height (for resizable window)
-    pub(super) screen_max: Size,
+    pub screen_max: Size,
     /// Matrix to scale screen (framebuffer rendering)
-    pub(super) screen_scale: Matrix,
+    pub screen_scale: Matrix,
 
     /// Store dropped files paths pointers (provided by GLFW)
-    pub(super) drop_filepaths: Vec<&'b Path>,
+    pub drop_filepaths: Vec<Box<Path>>,
 }
 
-impl<'a, 'b> Window<'a, 'b> {
+impl Window {
     /// Check if application should close (KEY_ESCAPE pressed or windows close icon clicked)
     pub fn should_close(&self) -> bool {
         todo!()

@@ -1,11 +1,10 @@
-use bitflags::bitflags;
 use crate::prelude::*;
 
 /// Keyboard keys (US keyboard layout)
 /// NOTE: Use GetKeyPressed() to allow redefining
 /// required keys for alternative layouts
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Key {
+pub enum KeyboardKey {
     // Alphanumeric keys
 
     /** '                          */ Apostrophe      =  39,
@@ -264,7 +263,7 @@ bitflags! {
 #[derive(Debug)]
 pub struct Keyboard {
     /// Default exit key
-    pub(super) exit_key: Option<Key>,
+    pub(super) exit_key: Option<KeyboardKey>,
     /// Registers current frame key state
     pub(super) current_key_state: [u8; Self::MAX_KEYS],
     /// Registers previous frame key state
