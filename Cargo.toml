@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 build = "build.rs"
 
+[dependencies]
+arrayvec = "0.7.6"
+bitflags = { version = "2.8.0", features = ["std", "compiler_builtins"] }
+sdl3 = "0.14.13"
+
 [features]
 default = [
     "support_module_rshapes",
@@ -19,7 +24,7 @@ default = [
     "support_winmm_highres_timer",
     "support_partialbusy_wait_loop",
     "support_screen_capture",
-    "support_gif_recording",
+    # "support_gif_recording",
     "support_compression_api",
     "support_automation_events",
     "support_mesh_gpu_skinning",
@@ -121,6 +126,3 @@ support_clipboard_image = [
 ]
 rlgl_enable_opengl_debug_context = []
 rlgl_show_gl_details_info = []
-
-[dependencies]
-sdl3 = "0.14.11"

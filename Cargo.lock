@@ -3,10 +3,25 @@
 version = 4
 
 [[package]]
+name = "arrayvec"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
+
+[[package]]
 name = "bitflags"
 version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
+dependencies = [
+ "compiler_builtins",
+]
+
+[[package]]
+name = "compiler_builtins"
+version = "0.1.147"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7170335a76fbcba350c3ea795c15df3b2c02934e35e502e82c4dd7837d4d0161"
 
 [[package]]
 name = "lazy_static"
@@ -24,14 +39,16 @@ checksum = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a"
 name = "raylib-rs-native"
 version = "0.1.0"
 dependencies = [
+ "arrayvec",
+ "bitflags",
  "sdl3",
 ]
 
 [[package]]
 name = "sdl3"
-version = "0.14.11"
+version = "0.14.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ab9fa9ed6942a7b0125ae65b98c9c5f69244783ec4bd1aa15c6650e4cc426e9"
+checksum = "1e1d761e45b0a156d0b17534ea5d67c2228cc1761efa02befd1d4297892a98fc"
 dependencies = [
  "bitflags",
  "lazy_static",

@@ -1,4 +1,4 @@
-/**********************************************************************************************
+/*!********************************************************************************************
 *
 *   raylib v5.5 - A simple and easy-to-use library to enjoy videogames programming (www.raylib.com)
 *
@@ -95,6 +95,7 @@
     clippy::missing_panics_doc,
     clippy::missing_safety_doc,
 )]
+#![forbid(unsafe_code)]
 
 pub const RAYLIB_VERSION: &str = "5.5";
 
@@ -109,6 +110,8 @@ pub mod math;
 pub mod shapes;
 pub mod graphics;
 pub mod audio;
+
+pub use platforms::rcore_desktop_sdl::*;
 
 pub mod prelude {
     pub use super::{
@@ -175,6 +178,21 @@ pub enum TraceLogType {
     Fatal,
 }
 
+impl TryFrom<u8> for TraceLogType {
+    type Error = std::num::TryFromIntError;
+    fn try_from(value: u8) -> Result<Self, std::num::TryFromIntError> {
+        match value {
+            1 => Ok(Self::Trace),
+            2 => Ok(Self::Debug),
+            3 => Ok(Self::Info),
+            4 => Ok(Self::Warning),
+            5 => Ok(Self::Error),
+            6 => Ok(Self::Fatal),
+            0 | 7.. => Err(u8::try_from(256u16).unwrap_err()),
+        }
+    }
+}
+
 /// Trace log level
 /// NOTE: Organized by priority level
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -196,6 +214,23 @@ pub enum TraceLogLevel {
     Fatal,
     /// Disable logging
     None,
+}
+
+impl TryFrom<u8> for TraceLogLevel {
+    type Error = std::num::TryFromIntError;
+    fn try_from(value: u8) -> Result<Self, std::num::TryFromIntError> {
+        match value {
+            0 => Ok(Self::All),
+            1 => Ok(Self::Trace),
+            2 => Ok(Self::Debug),
+            3 => Ok(Self::Info),
+            4 => Ok(Self::Warning),
+            5 => Ok(Self::Error),
+            6 => Ok(Self::Fatal),
+            7 => Ok(Self::None),
+            8.. => Err(u8::try_from(256u16).unwrap_err()),
+        }
+    }
 }
 
 impl From<TraceLogType> for TraceLogLevel {

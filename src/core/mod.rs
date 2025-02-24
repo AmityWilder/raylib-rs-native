@@ -1,54 +1,12 @@
-use std::path::PathBuf;
-use crate::{external::msf_gif::MsfGifResult, prelude::*, tracelog, TraceLogType::{self, Info}};
+use std::path::Path;
+use crate::{platforms::rcore_desktop_sdl::Platform, prelude::*, tracelog};
+#[cfg(feature = "support_gif_recording")]
+use crate::external::msf_gif::MsfGifResult;
 use input::Input;
 use window::Window;
 
 pub mod window;
 pub mod input;
-
-extern "Rust" {
-    fn WindowShouldClose() -> bool;
-    fn ToggleFullscreen();
-    fn ToggleBorderlessWindowed();
-    fn MaximizeWindow();
-    fn MinimizeWindow();
-    fn RestoreWindow();
-
-    fn SetWindowState(flags: ConfigFlags);
-    fn ClearWindowState(flags: ConfigFlags);
-
-    fn SetWindowIcon(image: &Image);
-    fn SetWindowIcons(images: &[Image]);
-    fn SetWindowTitle(title: &str);
-    fn SetWindowPosition(x: u32, y: u32);
-    fn SetWindowMonitor(monitor: sdl3::sys::video::SDL_DisplayID);
-    fn SetWindowMinSize(width: u32, height: u32);
-    fn SetWindowMaxSize(width: u32, height: u32);
-    fn SetWindowSize(width: u32, height: u32);
-    fn SetWindowOpacity(opacity: f32);
-    fn SetWindowFocused();
-    fn GetWindowHandle() -> *mut std::ffi::c_void;
-    fn GetWindowPosition() -> Vector2;
-    fn GetWindowScaleDPI() -> Vector2;
-
-    fn GetMonitorCount() -> usize;
-    fn GetCurrentMonitor() -> sdl3::sys::video::SDL_DisplayID;
-    fn GetMonitorWidth(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
-    fn GetMonitorHeight(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
-    fn GetMonitorPhysicalWidth(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
-    fn GetMonitorPhysicalHeight(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
-    fn GetMonitorRefreshRate(monitor: sdl3::sys::video::SDL_DisplayID) -> u32;
-    fn GetMonitorPosition(monitor: sdl3::sys::video::SDL_DisplayID) -> Vector2;
-    fn GetMonitorName(monitor: sdl3::sys::video::SDL_DisplayID) -> String;
-
-    fn SetClipboardText(text: &'static str);
-    fn GetClipboardText() -> String;
-
-    fn ShowCursor();
-    fn HideCursor();
-    fn EnableCursor();
-    fn DisableCursor();
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Point {
@@ -127,48 +85,49 @@ pub enum AutomationEventType {
 /// Automation event
 pub struct AutomationEvent {
     /// Event frame
-    frame: usize,
+    pub(crate) frame: usize,
     /// Event type (AutomationEventType)
-    ty: AutomationEventType,
+    pub(crate) ty: AutomationEventType,
     /// Event parameters (if required)
-    params: [i32; 4],
+    pub(crate) params: [i32; 4],
 }
 
 #[derive(Debug, Default)]
 pub struct Storage {
     /// Base path for data storage
-    base_path: PathBuf,
+    pub(crate) base_path: Option<&'static Path>,
 }
 
 #[derive(Debug, Default)]
 pub struct Time {
     /// Current time measure
-    current: f64,
+    pub(crate) current: f64,
     /// Previous time measure
-    previous: f64,
+    pub(crate) previous: f64,
     /// Time measure for frame update
-    update: f64,
+    pub(crate) update: f64,
     /// Time measure for frame draw
-    draw: f64,
+    pub(crate) draw: f64,
     /// Time measure for one frame
-    frame: f64,
+    pub(crate) frame: f64,
     /// Desired time for one frame, if 0 not applied
-    target: f64,
+    pub(crate) target: f64,
     /// Base time measure for hi-res timer (PLATFORM_ANDROID, PLATFORM_DRM)
-    base: usize,
+    pub(crate) base: usize,
     /// Frame counter
-    frame_counter: usize,
+    pub(crate) frame_counter: usize,
 }
 
 /// Core global state context data
-pub struct Core {
-    pub window: Window,
+pub struct Core<'a> {
+    pub window: Window<'a>,
     pub storage: Storage,
     pub input: Input,
     pub time: Time,
     is_gpu_ready: bool,
+
     /// Current automation events list, set by user, keep internal pointer
-    current_event_list: Option<Vec<AutomationEvent>>,
+    current_event_list: Option<&'a mut [AutomationEvent]>,
     /// Recording automation events flag
     automation_event_recording: bool,
 
@@ -187,10 +146,9 @@ pub struct Core {
     gif_state: MsfGifState,
 }
 
-impl Default for Core {
+impl Default for Core<'_> {
     fn default() -> Self {
         Self {
-            tracelog: Default::default(),
             window: Default::default(),
             storage: Default::default(),
             input: Default::default(),
@@ -212,44 +170,44 @@ impl Default for Core {
     }
 }
 
-impl Core {
+impl<'a> Core<'a> {
     /// Initialize window and OpenGL context
-    pub fn new(width: u32, height: u32, title: &str) -> Self {
-        tracelog!(TraceLogType::Info, "Initializing raylib {}", crate::RAYLIB_VERSION);
+    pub fn new(width: u32, height: u32, title: &'a str) -> Self {
+        tracelog!(Info, "Initializing raylib {}", crate::RAYLIB_VERSION);
 
-        tracelog!(TraceLogType::Info, "Platform backend: DESKTOP (SDL)");
+        tracelog!(Info, "Platform backend: DESKTOP (SDL)");
 
-        tracelog!(TraceLogType::Info, "Supported raylib modules:");
-        tracelog!(TraceLogType::Info, "    > rcore:..... loaded (mandatory)");
-        tracelog!(TraceLogType::Info, "    > rlgl:...... loaded (mandatory)");
+        tracelog!(Info, "Supported raylib modules:");
+        tracelog!(Info, "    > rcore:..... loaded (mandatory)");
+        tracelog!(Info, "    > rlgl:...... loaded (mandatory)");
         if cfg!(feature = "support_module_rshapes") {
-            tracelog!(TraceLogType::Info, "    > rshapes:... loaded (optional)");
+            tracelog!(Info, "    > rshapes:... loaded (optional)");
         } else {
-            tracelog!(TraceLogType::Info, "    > rshapes:... not loaded (optional)");
+            tracelog!(Info, "    > rshapes:... not loaded (optional)");
         }
 
         if cfg!(feature = "support_module_rtextures") {
-            tracelog!(TraceLogType::Info, "    > rtextures:. loaded (optional)");
+            tracelog!(Info, "    > rtextures:. loaded (optional)");
         } else {
-            tracelog!(TraceLogType::Info, "    > rtextures:. not loaded (optional)");
+            tracelog!(Info, "    > rtextures:. not loaded (optional)");
         }
 
         if cfg!(feature = "support_module_rtext") {
-            tracelog!(TraceLogType::Info, "    > rtext:..... loaded (optional)");
+            tracelog!(Info, "    > rtext:..... loaded (optional)");
         } else {
-            tracelog!(TraceLogType::Info, "    > rtext:..... not loaded (optional)");
+            tracelog!(Info, "    > rtext:..... not loaded (optional)");
         }
 
         if cfg!(feature = "support_module_rmodels") {
-            tracelog!(TraceLogType::Info, "    > rmodels:... loaded (optional)");
+            tracelog!(Info, "    > rmodels:... loaded (optional)");
         } else {
-            tracelog!(TraceLogType::Info, "    > rmodels:... not loaded (optional)");
+            tracelog!(Info, "    > rmodels:... not loaded (optional)");
         }
 
         if cfg!(feature = "support_module_raudio") {
-            tracelog!(TraceLogType::Info, "    > raudio:.... loaded (optional)");
+            tracelog!(Info, "    > raudio:.... loaded (optional)");
         } else {
-            tracelog!(TraceLogType::Info, "    > raudio:.... not loaded (optional)");
+            tracelog!(Info, "    > raudio:.... not loaded (optional)");
         }
 
         let mut core = Self::default();
@@ -260,7 +218,7 @@ impl Core {
         core.window.event_waiting = false;
         core.window.screen_scale = Matrix::IDENTITY; // No draw scaling required by default
         if !title.is_empty() {
-            core.window.title = title.to_string();
+            core.window.title = title;
         }
 
         // Initialize global input state
@@ -270,10 +228,10 @@ impl Core {
         core.input.mouse.cursor = MouseCursor::Arrow;
         core.input.gamepad.last_button_pressed = None;
 
-        // // Initialize platform
-        // //--------------------------------------------------------------
-        // InitPlatform();
-        // //--------------------------------------------------------------
+        // Initialize platform
+        //--------------------------------------------------------------
+        let platform = Platform::init(&mut core);
+        //--------------------------------------------------------------
 
         // // Initialize rlgl default data (buffers and shaders)
         // // NOTE: core.window.current_fbo.width and core.window.current_fbo.height not used, just stored as globals in rlgl
@@ -323,7 +281,7 @@ impl Core {
         // // Initialize random seed
         // SetRandomSeed(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as u32);
 
-        // TRACELOG!(TraceLogType::Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
+        // TRACELOG!(Info, "SYSTEM: Working Directory: %s", GetWorkingDirectory());
 
         core
     }

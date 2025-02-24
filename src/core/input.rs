@@ -1,4 +1,6 @@
-use crate::prelude::*;
+use arrayvec::{ArrayString, ArrayVec};
+use bitflags::bitflags;
+use crate::{config::*, prelude::*};
 
 /// Keyboard keys (US keyboard layout)
 /// NOTE: Use GetKeyPressed() to allow redefining
@@ -126,6 +128,7 @@ pub enum KeyboardKey {
     /** Android volume up button   */ VolumeUp        =  24,
     /** Android volume down button */ VolumeDown      =  25,
 }
+const _: () = assert!(std::mem::size_of::<KeyboardKey>() == std::mem::size_of::<Option<KeyboardKey>>());
 
 /// Mouse buttons
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -231,6 +234,7 @@ pub enum GamepadAxis {
     /// Gamepad back trigger right, pressure level: [1..-1]
     RightTrigger,
 }
+const _: () = assert!(std::mem::size_of::<GamepadAxis>() == std::mem::size_of::<Option<GamepadAxis>>());
 
 bitflags! {
     /// Gesture
@@ -263,145 +267,139 @@ bitflags! {
 #[derive(Debug)]
 pub struct Keyboard {
     /// Default exit key
-    pub(super) exit_key: Option<KeyboardKey>,
+    pub(crate) exit_key: Option<KeyboardKey>,
     /// Registers current frame key state
-    pub(super) current_key_state: [u8; Self::MAX_KEYS],
+    pub(crate) current_key_state: [u8; MAX_KEYBOARD_KEYS],
     /// Registers previous frame key state
-    pub(super) previous_key_state: [u8; Self::MAX_KEYS],
+    pub(crate) previous_key_state: [u8; MAX_KEYBOARD_KEYS],
 
     /// NOTE: Since key press logic involves comparing prev vs cur key state, we need to handle key repeats specially
     /// Registers key repeats for current frame
-    pub(super) key_repeat_in_frame: [char; Self::MAX_KEYS],
+    pub(crate) key_repeat_in_frame: [u8; MAX_KEYBOARD_KEYS],
 
     /// Input keys queue
-    pub(super) key_pressed_queue: [char; Self::MAX_KEY_PRESSED_QUEUE],
-    /// Input keys queue count
-    pub(super) key_pressed_queue_count: usize,
+    pub(crate) key_pressed_queue: ArrayVec<Option<KeyboardKey>, MAX_KEY_PRESSED_QUEUE>,
 
     /// Input characters queue (unicode)
-    pub(super) char_pressed_queue: [char; Self::MAX_CHAR_PRESSED_QUEUE],
-    /// Input characters queue count
-    pub(super) char_pressed_queue_count: usize,
+    pub(crate) char_pressed_queue: ArrayVec<char, MAX_CHAR_PRESSED_QUEUE>,
 }
 
 impl Default for Keyboard {
     fn default() -> Self {
         Self {
             exit_key: Default::default(),
-            current_key_state: [Default::default(); Self::MAX_KEYS],
-            previous_key_state: [Default::default(); Self::MAX_KEYS],
-            key_repeat_in_frame: [Default::default(); Self::MAX_KEYS],
+            current_key_state: [Default::default(); MAX_KEYBOARD_KEYS],
+            previous_key_state: [Default::default(); MAX_KEYBOARD_KEYS],
+            key_repeat_in_frame: [Default::default(); MAX_KEYBOARD_KEYS],
             key_pressed_queue: Default::default(),
-            key_pressed_queue_count: Default::default(),
             char_pressed_queue: Default::default(),
-            char_pressed_queue_count: Default::default(),
         }
     }
 }
 
 impl Keyboard {
     /// Maximum number of keyboard keys supported
-    pub const MAX_KEYS: usize = 512;
+    pub const MAX_KEYS: usize = MAX_KEYBOARD_KEYS;
     /// Maximum number of keys in the key input queue
-    pub const MAX_KEY_PRESSED_QUEUE: usize = 16;
+    pub const MAX_KEY_PRESSED_QUEUE: usize = MAX_KEY_PRESSED_QUEUE;
     /// Maximum number of characters in the char input queue
-    pub const MAX_CHAR_PRESSED_QUEUE: usize = 16;
+    pub const MAX_CHAR_PRESSED_QUEUE: usize = MAX_CHAR_PRESSED_QUEUE;
 }
 
 #[derive(Debug, Default)]
 pub struct Mouse {
     /// Mouse offset
-    pub(super) offset: Offset2,
+    pub(crate) offset: Offset2,
     /// Mouse scaling
-    pub(super) scale: Vector2,
+    pub(crate) scale: Vector2,
     /// Mouse position on screen
-    pub(super) current_position: Vector2,
+    pub(crate) current_position: Vector2,
     /// Previous mouse position
-    pub(super) previous_position: Vector2,
+    pub(crate) previous_position: Vector2,
 
     /// Tracks current mouse cursor
-    pub(super) cursor: MouseCursor,
+    pub(crate) cursor: MouseCursor,
     /// Track if cursor is hidden
-    pub(super) is_cursor_hidden: bool,
+    pub(crate) is_cursor_hidden: bool,
     /// Tracks if cursor is inside client area
-    pub(super) is_cursor_on_screen: bool,
+    pub(crate) is_cursor_on_screen: bool,
 
     /// Registers current mouse button state
-    pub(super) current_button_state: [char; Self::MAX_BUTTONS],
+    pub(crate) current_button_state: [u8; MAX_MOUSE_BUTTONS],
     /// Registers previous mouse button state
-    pub(super) previous_button_state: [char; Self::MAX_BUTTONS],
+    pub(crate) previous_button_state: [u8; MAX_MOUSE_BUTTONS],
     /// Registers current mouse wheel variation
-    pub(super) current_wheel_move: Vector2,
+    pub(crate) current_wheel_move: Vector2,
     /// Registers previous mouse wheel variation
-    pub(super) previous_wheel_move: Vector2,
+    pub(crate) previous_wheel_move: Vector2,
 }
 
 impl Mouse {
     /// Maximum number of mouse buttons supported
-    pub const MAX_BUTTONS: usize = 8;
+    pub const MAX_BUTTONS: usize = MAX_MOUSE_BUTTONS;
+}
+
+#[derive(Debug, Default)]
+pub struct TouchPoint {
+    /// Point identifiers
+    pub(crate) point_id: u32,
+    /// Touch position on screen
+    pub(crate) position: Vector2,
+    /// Registers current touch state
+    pub(crate) current_touch_state: char,
+    /// Registers previous touch state
+    pub(crate) previous_touch_state: char,
 }
 
 #[derive(Debug, Default)]
 pub struct Touch {
-    /// Number of touch points active
-    point_count: usize,
-    /// Point identifiers
-    point_id: [usize; Self::MAX_POINTS],
-    /// Touch position on screen
-    position: [Vector2; Self::MAX_POINTS],
-    /// Registers current touch state
-    current_touch_state: [char; Self::MAX_POINTS],
-    /// Registers previous touch state
-    previous_touch_state: [char; Self::MAX_POINTS],
+    pub(crate) items: ArrayVec<TouchPoint, MAX_TOUCH_POINTS>,
 }
 
 impl Touch {
     /// Maximum number of touch points supported
-    pub const MAX_POINTS: usize = 8;
+    pub const MAX: usize = MAX_TOUCH_POINTS;
 }
 
-#[derive(Debug)]
+/// Maximum number of bytes in a gamepad name
+pub const MAX_GAMEPAD_NAME_LEN: usize = 64;
+
+#[derive(Debug, Default)]
 pub struct Gamepad {
-    /// Register last gamepad button pressed
-    pub(super) last_button_pressed: Option<GamepadButton>,
-    /// Register number of available gamepad axis
-    pub(super) axis_count: [usize; Self::MAX_GAMEPADS],
     /// Flag to know if gamepad is ready
-    pub(super) ready: [bool; Self::MAX_GAMEPADS],
+    pub(crate) ready: bool,
+    /// Register number of available gamepad axis
+    pub(crate) axis_count: u32,
     /// Gamepad name holder
-    pub(super) name: [[char; Self::GAMEPAD_NAME_LEN]; Self::MAX_GAMEPADS],
+    pub(crate) name: ArrayString<MAX_GAMEPAD_NAME_LEN>,
     /// Current gamepad buttons state
-    pub(super) current_button_state: [[char; Self::MAX_BUTTONS]; Self::MAX_GAMEPADS],
+    pub(crate) current_button_state: [u8; MAX_GAMEPAD_BUTTONS],
     /// Previous gamepad buttons state
-    pub(super) previous_button_state: [[char; Self::MAX_BUTTONS]; Self::MAX_GAMEPADS],
+    pub(crate) previous_button_state: [u8; MAX_GAMEPAD_BUTTONS],
     /// Gamepad axis state
-    pub(super) axis_state: [[f32; Self::MAX_AXIS]; Self::MAX_GAMEPADS],
+    pub(crate) axis_state: [f32; MAX_GAMEPAD_AXIS], // NOT dynamic
 }
 
-impl Default for Gamepad {
-    fn default() -> Self {
-        Self {
-            last_button_pressed: Default::default(),
-            axis_count: Default::default(),
-            ready: Default::default(),
-            name: [[Default::default(); Self::GAMEPAD_NAME_LEN]; Self::MAX_GAMEPADS],
-            current_button_state: Default::default(),
-            previous_button_state: Default::default(),
-            axis_state: Default::default(),
-        }
-    }
-}
-
-impl Gamepad {
-    const GAMEPAD_NAME_LEN: usize = 64;
-    /// Maximum number of gamepads supported
-    pub const MAX_GAMEPADS: usize = 4;
+impl Gamepads {
     /// Maximum number of axis supported (per gamepad)
-    pub const MAX_AXIS: usize = 8;
+    pub const MAX_AXIS: usize = MAX_GAMEPAD_AXIS;
     /// Maximum number of buttons supported (per gamepad)
-    pub const MAX_BUTTONS: usize = 32;
+    pub const MAX_BUTTONS: usize = MAX_GAMEPAD_BUTTONS;
     /// Maximum vibration time in seconds
-    pub const MAX_VIBRATION_TIME: f32 = 2.0;
+    pub const MAX_VIBRATION_TIME: f32 = MAX_GAMEPAD_VIBRATION_TIME;
+}
+
+#[derive(Debug, Default)]
+pub struct Gamepads {
+    /// Register last gamepad button pressed
+    pub(crate) last_button_pressed: Option<GamepadButton>,
+    /// Gamepad array
+    pub(crate) items: ArrayVec<Gamepad, MAX_GAMEPADS>,
+}
+
+impl Gamepads {
+    /// Maximum number of gamepads supported
+    pub const MAX: usize = MAX_GAMEPADS;
 }
 
 #[derive(Debug, Default)]
@@ -409,5 +407,5 @@ pub struct Input {
     pub keyboard: Keyboard,
     pub mouse: Mouse,
     pub touch: Touch,
-    pub gamepad: Gamepad,
+    pub gamepad: Gamepads,
 }
